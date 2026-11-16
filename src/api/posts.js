@@ -27,6 +27,14 @@ const FAKE_POSTS = [
     vote_ends_at: '2026-11-16T03:00:00+09:00',
     response_count: 27,
   },
+  {
+    id: 12,
+    title: '교환학생 갈까요 말까요',
+    content: '교환학생 갈까 고민이 돼요...',
+    tag: '입시',
+    vote_ends_at: '2026-11-20T21:00:00+09:00',
+    response_count: 12,
+  }
 ]
 
 // 사연 목록 가져오기
