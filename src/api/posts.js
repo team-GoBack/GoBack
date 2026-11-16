@@ -4,14 +4,6 @@
 
 const FAKE_POSTS = [
   {
-    id: 1,
-    title: '고백할까 말까',
-    content: '3년 동안 친구로 지낸 사람이 있는데...',
-    tag: '연애',
-    vote_ends_at: '2026-11-20T21:00:00+09:00',
-    response_count: 12,
-  },
-  {
     id: 2,
     title: '휴학하고 편입 준비할까',
     content: '지금 학교도 나쁘진 않은데 미련이 남아요',
@@ -32,6 +24,14 @@ const FAKE_POSTS = [
     title: '교환학생 갈까요 말까요',
     content: '교환학생 갈까 고민이 돼요...',
     tag: '입시',
+    vote_ends_at: '2026-11-20T21:00:00+09:00',
+    response_count: 12,
+  },
+  {
+    id: 13,
+    title: '알바 ㄱ?',
+    content: '학원 알바를 할까 고민 중이에요',
+    tag: '기타',
     vote_ends_at: '2026-11-20T21:00:00+09:00',
     response_count: 12,
   }
