@@ -9,7 +9,7 @@
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
-  background: #eaf7fb;
+  background: #e5f4f8;
   color: #344955;
 }
 
@@ -36,7 +36,7 @@ a {
 .logo {
   font-size: 24px;
   font-weight: 700;
-  color: #f58220;
+  color: #f47820;
 }
 
 .header-actions {
@@ -51,7 +51,7 @@ a {
 
 /* 로그인 버튼 */
 .login-btn {
-  border: 1px solid #b9dce5;
+  border: 1px solid #b2d8e2;
   background: #ffffff;
   color: #344955;
   padding: 8px 14px;
@@ -62,7 +62,7 @@ a {
 
 /* 사연 쓰기 버튼 */
 .write-btn {
-  background: #f58220;
+  background: #f47820;
   color: #ffffff;
   padding: 8px 14px;
   border-radius: 8px;
@@ -76,7 +76,7 @@ a {
 }
 
 .tags button {
-  border: 1px solid #b9dce5;
+  border: 1px solid #b2d8e2;
   background: #ffffff;
   color: #344955;
   padding: 6px 12px;
@@ -85,9 +85,9 @@ a {
 }
 
 .tags button.active {
-  background: #39b8d0;
+  background: #32adc8;
   color: #ffffff;
-  border-color: #39b8d0;
+  border-color: #32adc8;
 }
 
 /* 사연 카드 */
@@ -97,7 +97,7 @@ a {
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
-  border: 1px solid #cbe5ed;
+  border: 1px solid #a6d4df;
 }
 
 .post-card h3 {
@@ -116,8 +116,8 @@ a {
 /* 사연 태그 */
 .tag {
   font-size: 12px;
-  background: #dff5fa;
-  color: #16859b;
+  background: #fff0e2;
+  color: #bd590b;
   padding: 2px 8px;
   border-radius: 999px;
 }
