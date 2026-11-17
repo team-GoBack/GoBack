@@ -5,6 +5,8 @@ a { color: inherit; text-decoration: none; }
 .app { max-width: 640px; margin: 0 auto; padding: 0 16px 40px; }
 .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
 .logo { font-size: 24px; font-weight: 700; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+.login-btn { border: 1px solid #ccc; background: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; font: inherit; }
 .write-btn { background: #222; color: #fff; padding: 8px 14px; border-radius: 8px; }
 .tags { display: flex; gap: 8px; margin-bottom: 16px; }
 .tags button { border: 1px solid #ccc; background: #fff; padding: 6px 12px; border-radius: 999px; cursor: pointer; }

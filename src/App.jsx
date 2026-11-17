@@ -4,13 +4,17 @@ import { Routes, Route, Link } from 'react-router-dom'
 import MainPage from './pages/MainPage.jsx'
 import PostDetailPage from './pages/PostDetailPage.jsx'
 import WritePage from './pages/WritePage.jsx'
+import LoginButton from './components/LoginButton.jsx'
 
 export default function App() {
   return (
     <div className="app">
       <header className="header">
         <Link to="/" className="logo">GoBack</Link>
-        <Link to="/write" className="write-btn">사연 쓰기</Link>
+        <div className="header-actions">
+          <LoginButton />
+          <Link to="/write" className="write-btn">사연 쓰기</Link>
+        </div>
       </header>
 
       <Routes>
