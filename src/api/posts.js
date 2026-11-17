@@ -1,19 +1,19 @@
-// [백엔드 팀] 사연 관련 "주문 창구"
+// [백엔드 팀] 사연 관련 "주문 창구" (진짜: Supabase)
 // 함수 이름 / 넣는 값 / 돌려주는 모양은 절대 혼자 바꾸지 말 것 (약속!)
-//
-// 지금 상태
-// - getPosts, getPost : 진짜 (Supabase posts 표)
-// - 나머지            : 가짜 (fakeStore.js 메모리, 새로고침하면 사라짐)
+// 누가 무엇을 할 수 있는지는 DB 규칙(RLS)이 최종으로 막아줌. 여기서는 친절한 안내용으로 한 번 더 확인.
 import { supabase } from './supabase.js'
 import { getCurrentUser } from './auth.js'
-import { fakePosts, newPostId, fakeOptions, fakeResponses, fakeFinishes, newId, ensureSample } from './fakeStore.js'
 
-function countResponses(postId) {
-  return fakeResponses[String(postId)]?.length ?? 0
-}
-
-function findFakePost(id) {
-  return fakePosts.find((post) => post.id === Number(id))
+// 사연별 투표 수 { 사연id: 개수 } (블라인드와 상관없이 개수만 셈)
+async function getCounts() {
+  const { data, error } = await supabase.rpc('response_counts')
+  if (error) {
+    console.error('response_counts 실패:', error)
+    return {}
+  }
+  const counts = {}
+  for (const row of data) counts[row.post_id] = Number(row.count)
+  return counts
 }
 
 // 사연 목록 가져오기
@@ -27,56 +27,30 @@ export async function getPosts(tag) {
 
   if (tag) query = query.eq('tag', tag)
 
-  const { data, error } = await query
+  const [{ data, error }, counts] = await Promise.all([query, getCounts()])
   if (error) {
     console.error('getPosts 실패:', error)
     return []
   }
-
-  // 임시: createPost로 만든 가짜 사연도 맨 앞에 같이 보여줌
-  const fakes = fakePosts.filter((post) => !tag || post.tag === tag)
-  const all = [...fakes, ...data]
-  // response_count는 아직 투표 표가 없어서 가짜 댓글 수로 채움 (약속한 모양 유지)
-  return all.map((post) => ({
-    id: post.id,
-    title: post.title,
-    content: post.content,
-    tag: post.tag,
-    vote_ends_at: post.vote_ends_at,
-    response_count: countResponses(post.id),
-  }))
+  return data.map((post) => ({ ...post, response_count: counts[post.id] ?? 0 }))
 }
 
 // 사연 하나 가져오기
 // 넣는 값: id
 // 돌려주는 값: { id, title, content, tag, vote_ends_at, response_count } 또는 null
 export async function getPost(id) {
-  const fake = findFakePost(id)
-  if (fake) {
-    return {
-      id: fake.id,
-      title: fake.title,
-      content: fake.content,
-      tag: fake.tag,
-      vote_ends_at: fake.vote_ends_at,
-      response_count: countResponses(fake.id),
-    }
-  }
-
-  const { data, error } = await supabase
-    .from('posts')
-    .select('id, title, content, tag, vote_ends_at')
-    .eq('id', id)
-    .maybeSingle()
-
+  const [{ data, error }, counts] = await Promise.all([
+    supabase.from('posts').select('id, title, content, tag, vote_ends_at').eq('id', id).maybeSingle(),
+    getCounts(),
+  ])
   if (error || !data) {
-    console.error('getPost 실패:', error)
+    if (error) console.error('getPost 실패:', error)
     return null
   }
-  return { ...data, response_count: countResponses(data.id) }
+  return { ...data, response_count: counts[data.id] ?? 0 }
 }
 
-// [가짜] 사연 쓰기 (선택지도 같이)
+// 사연 쓰기 (선택지도 같이)
 // 넣는 값: { title, content, tag, voteHours, wantsEpilogue, options }
 //   - voteHours: 투표 시간(시간 단위 숫자). 1시간=1, 1일=24, 1주일=168
 //   - wantsEpilogue: 후일담 받기 체크 (true/false)
@@ -88,83 +62,106 @@ export async function createPost({ title, content, tag, voteHours, wantsEpilogue
     console.error('createPost 실패: 로그인 필요')
     return null
   }
-  if (!title || !content || !tag || !voteHours || !options || options.length < 2) {
+  const labels = (options ?? []).map((label) => String(label).trim()).filter(Boolean)
+  if (!title || !content || !tag || !voteHours || labels.length < 2) {
     console.error('createPost 실패: 빠진 값이 있거나 선택지가 2개 미만')
     return null
   }
 
-  const id = newPostId()
   const voteEndsAt = new Date(Date.now() + voteHours * 60 * 60 * 1000).toISOString()
 
-  fakePosts.unshift({
-    id,
-    title,
-    content,
-    tag,
-    vote_ends_at: voteEndsAt,
-    wants_epilogue: Boolean(wantsEpilogue),
-    user_id: me.id,
-    created_at: new Date().toISOString(),
-  })
-  fakeOptions[String(id)] = options.map((label, i) => ({ id: newId(), label, order: i + 1 }))
-  fakeResponses[String(id)] = []
+  // 1) 사연 넣기 (user_id는 DB가 로그인한 사람으로 자동으로 채움)
+  const { data: post, error } = await supabase
+    .from('posts')
+    .insert({ title, content, tag, vote_ends_at: voteEndsAt, wants_epilogue: Boolean(wantsEpilogue) })
+    .select('id')
+    .single()
+  if (error) {
+    console.error('createPost 실패:', error)
+    return null
+  }
 
-  return { id }
+  // 2) 선택지 넣기. 실패하면 방금 넣은 사연도 지워서 반쪽짜리 사연이 남지 않게
+  const { error: optionError } = await supabase
+    .from('options')
+    .insert(labels.map((label, i) => ({ post_id: post.id, label, sort_order: i + 1 })))
+  if (optionError) {
+    console.error('createPost 선택지 실패:', optionError)
+    await supabase.from('posts').delete().eq('id', post.id)
+    return null
+  }
+
+  return { id: post.id }
 }
 
-// [가짜] 사연 수정 (투표 마감 전, 내 사연만)
+// 사연 수정 (투표 마감 전, 내 사연만)
 // 넣는 값: id, { title, content, tag }  (바꿀 것만 넣어도 됨)
 // 돌려주는 값: true (성공) / false (실패: 마감됐거나 내 사연이 아님)
 export async function updatePost(id, changes) {
-  const post = findFakePost(id)
-  const me = await getCurrentUser()
-  if (!post || !me || post.user_id !== me.id) return false
-  if (new Date(post.vote_ends_at) <= new Date()) return false
+  const patch = {}
+  if (changes.title !== undefined) patch.title = changes.title
+  if (changes.content !== undefined) patch.content = changes.content
+  if (changes.tag !== undefined) patch.tag = changes.tag
 
-  if (changes.title !== undefined) post.title = changes.title
-  if (changes.content !== undefined) post.content = changes.content
-  if (changes.tag !== undefined) post.tag = changes.tag
-  return true
+  const { data, error } = await supabase
+    .from('posts')
+    .update(patch)
+    .eq('id', id)
+    .gt('vote_ends_at', new Date().toISOString())
+    .select('id')
+  if (error) console.error('updatePost 실패:', error)
+  return !error && data.length === 1
 }
 
-// [가짜] 사연 삭제 (투표 마감 전, 내 사연만)
+// 사연 삭제 (투표 마감 전, 내 사연만)
 // 넣는 값: id
 // 돌려주는 값: true (성공) / false (실패)
 export async function deletePost(id) {
-  const post = findFakePost(id)
-  const me = await getCurrentUser()
-  if (!post || !me || post.user_id !== me.id) return false
-  if (new Date(post.vote_ends_at) <= new Date()) return false
-
-  fakePosts.splice(fakePosts.indexOf(post), 1)
-  return true
+  const { data, error } = await supabase.from('posts').delete().eq('id', id).select('id')
+  if (error) console.error('deletePost 실패:', error)
+  return !error && data.length === 1
 }
 
-// [가짜] 선택지 가져오기
+// 선택지 가져오기
 // 넣는 값: postId
 // 돌려주는 값: [{ id, label, order }, ...]  (order 순)
 export async function getOptions(postId) {
-  ensureSample(postId)
-  return [...fakeOptions[String(postId)]].sort((a, b) => a.order - b.order)
+  const { data, error } = await supabase
+    .from('options')
+    .select('id, label, sort_order')
+    .eq('post_id', postId)
+    .order('sort_order')
+  if (error) {
+    console.error('getOptions 실패:', error)
+    return []
+  }
+  return data.map((o) => ({ id: o.id, label: o.label, order: o.sort_order }))
 }
 
-// [가짜] 사연자 마무리: 내 선택 공개 + Best Pick 댓글 1개 선정 (마감 후, 내 사연만)
+// 사연자 마무리: 내 선택 공개 + Best Pick 댓글 1개 선정 (마감 후, 내 사연만, 한 번만)
 // 넣는 값: id, optionId (내가 고른 선택지), bestResponseId (Best Pick 댓글 id)
 // 돌려주는 값: true (성공) / false (실패)
 export async function finishPost(id, optionId, bestResponseId) {
-  const post = findFakePost(id)
-  const me = await getCurrentUser()
-  if (!post || !me || post.user_id !== me.id) return false
-  if (new Date(post.vote_ends_at) > new Date()) return false // 아직 마감 전
-  if (fakeFinishes[String(id)]) return false // 이미 마무리함
-
-  fakeFinishes[String(id)] = { chosen_option_id: optionId, best_response_id: bestResponseId }
-  return true
+  const { data, error } = await supabase
+    .from('posts')
+    .update({ chosen_option_id: optionId, best_response_id: bestResponseId })
+    .eq('id', id)
+    .lte('vote_ends_at', new Date().toISOString()) // 마감 후에만
+    .is('chosen_option_id', null) // 아직 마무리 안 한 사연만
+    .select('id')
+  if (error) console.error('finishPost 실패:', error)
+  return !error && data.length === 1
 }
 
-// [가짜] 사연자 마무리 결과 보기
+// 사연자 마무리 결과 보기
 // 넣는 값: id
 // 돌려주는 값: { chosen_option_id, best_response_id } 또는 null (아직 마무리 안 함)
 export async function getFinish(id) {
-  return fakeFinishes[String(id)] ?? null
+  const { data, error } = await supabase
+    .from('posts')
+    .select('chosen_option_id, best_response_id')
+    .eq('id', id)
+    .maybeSingle()
+  if (error || !data || data.chosen_option_id === null) return null
+  return data
 }
