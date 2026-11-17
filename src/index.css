@@ -9,7 +9,7 @@
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
-  background: #fafafa;
+  background: #fff9e9;
   color: #191919;
 }
 
@@ -51,7 +51,7 @@ a {
 
 /* 로그인 버튼 */
 .login-btn {
-  border: 1px solid #dddddd;
+  border: 1px solid #e9dfbf;
   background: #ffffff;
   color: #191919;
   padding: 8px 14px;
@@ -76,7 +76,7 @@ a {
 }
 
 .tags button {
-  border: 1px solid #dddddd;
+  border: 1px solid #e9dfbf;
   background: #ffffff;
   color: #444444;
   padding: 6px 12px;
@@ -97,7 +97,7 @@ a {
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
-  border: 1px solid #e8e8e8;
+  border: 1px solid #eee5c9;
 }
 
 .post-card h3 {
@@ -116,8 +116,8 @@ a {
 /* 사연 태그 */
 .tag {
   font-size: 12px;
-  background: #fff9db;
-  color: #665500;
+  background: #fff1bd;
+  color: #665200;
   padding: 2px 8px;
   border-radius: 999px;
 }
