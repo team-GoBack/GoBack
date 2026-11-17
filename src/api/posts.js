@@ -5,7 +5,8 @@
 // - getPosts, getPost : 진짜 (Supabase posts 표)
 // - 나머지            : 가짜 (fakeStore.js 메모리, 새로고침하면 사라짐)
 import { supabase } from './supabase.js'
-import { FAKE_ME, fakePosts, newPostId, fakeOptions, fakeResponses, fakeFinishes, newId, ensureSample } from './fakeStore.js'
+import { getCurrentUser } from './auth.js'
+import { fakePosts, newPostId, fakeOptions, fakeResponses, fakeFinishes, newId, ensureSample } from './fakeStore.js'
 
 function countResponses(postId) {
   return fakeResponses[String(postId)]?.length ?? 0
@@ -82,6 +83,11 @@ export async function getPost(id) {
 //   - options: 선택지 글자 배열. 예) ['한다', '안 한다', '모르겠다']  (2개 이상)
 // 돌려주는 값: { id } (새 사연 번호) 또는 null (실패)
 export async function createPost({ title, content, tag, voteHours, wantsEpilogue, options }) {
+  const me = await getCurrentUser()
+  if (!me) {
+    console.error('createPost 실패: 로그인 필요')
+    return null
+  }
   if (!title || !content || !tag || !voteHours || !options || options.length < 2) {
     console.error('createPost 실패: 빠진 값이 있거나 선택지가 2개 미만')
     return null
@@ -97,7 +103,7 @@ export async function createPost({ title, content, tag, voteHours, wantsEpilogue
     tag,
     vote_ends_at: voteEndsAt,
     wants_epilogue: Boolean(wantsEpilogue),
-    user_id: FAKE_ME.id,
+    user_id: me.id,
     created_at: new Date().toISOString(),
   })
   fakeOptions[String(id)] = options.map((label, i) => ({ id: newId(), label, order: i + 1 }))
@@ -111,7 +117,8 @@ export async function createPost({ title, content, tag, voteHours, wantsEpilogue
 // 돌려주는 값: true (성공) / false (실패: 마감됐거나 내 사연이 아님)
 export async function updatePost(id, changes) {
   const post = findFakePost(id)
-  if (!post || post.user_id !== FAKE_ME.id) return false
+  const me = await getCurrentUser()
+  if (!post || !me || post.user_id !== me.id) return false
   if (new Date(post.vote_ends_at) <= new Date()) return false
 
   if (changes.title !== undefined) post.title = changes.title
@@ -125,7 +132,8 @@ export async function updatePost(id, changes) {
 // 돌려주는 값: true (성공) / false (실패)
 export async function deletePost(id) {
   const post = findFakePost(id)
-  if (!post || post.user_id !== FAKE_ME.id) return false
+  const me = await getCurrentUser()
+  if (!post || !me || post.user_id !== me.id) return false
   if (new Date(post.vote_ends_at) <= new Date()) return false
 
   fakePosts.splice(fakePosts.indexOf(post), 1)
@@ -145,7 +153,8 @@ export async function getOptions(postId) {
 // 돌려주는 값: true (성공) / false (실패)
 export async function finishPost(id, optionId, bestResponseId) {
   const post = findFakePost(id)
-  if (!post || post.user_id !== FAKE_ME.id) return false
+  const me = await getCurrentUser()
+  if (!post || !me || post.user_id !== me.id) return false
   if (new Date(post.vote_ends_at) > new Date()) return false // 아직 마감 전
   if (fakeFinishes[String(id)]) return false // 이미 마무리함
 

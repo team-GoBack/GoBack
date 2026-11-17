@@ -4,8 +4,6 @@
 // 새로고침하면 처음 상태로 돌아감. 진짜 표가 생기면 이 파일은 지워짐.
 // 화면 파일에서 이 파일을 직접 import 하지 말 것! (api 함수만 부르기)
 
-export const FAKE_ME = { id: 'fake-me', email: 'me@example.com' }
-
 // 가짜로 "작성한" 사연들 (createPost로 만든 것). id는 9001부터
 export const fakePosts = []
 let nextPostId = 9001
