@@ -1,36 +1,35 @@
-// [백엔드 팀] 투표+댓글, 궁금해요 "주문 창구"
-// 지금은 전부 가짜 (fakeStore.js 메모리, 새로고침하면 사라짐)
+// [백엔드 팀] 투표+댓글, 궁금해요 "주문 창구" (진짜: Supabase)
 // 함수 이름 / 넣는 값 / 돌려주는 모양은 절대 혼자 바꾸지 말 것 (약속!)
 //
-// 블라인드 규칙 (진짜 버전에선 DB가 막아줌. 가짜 버전도 똑같이 흉내 냄)
+// 블라인드 규칙은 DB(RLS)가 막아줌. 볼 수 없는 댓글은 DB가 아예 안 보내줌.
 // - 내가 투표+댓글 쓰기 전엔 남의 댓글·결과가 빈 배열로 옴
 // - 궁금해요를 누르면 보이지만, 그 사연엔 투표 불가
 // - 사연자 본인은 항상 다 보임
-// - 투표 마감 후엔 누구나 다 보이고, 아무도 투표 못 함
+// - 투표 마감 후엔 누구나(로그인 안 해도) 다 보이고, 아무도 투표 못 함
+import { supabase } from './supabase.js'
 import { getCurrentUser } from './auth.js'
-import { getPost } from './posts.js'
-import { fakePosts, fakeOptions, fakeResponses, fakePeeks, newId, ensureSample } from './fakeStore.js'
+
+// DB의 도우미 함수 호출 (is_post_author, has_responded 등) → true/false
+async function ask(fn, postId) {
+  const { data, error } = await supabase.rpc(fn, { pid: Number(postId) })
+  if (error) {
+    console.error(`${fn} 실패:`, error)
+    return false
+  }
+  return Boolean(data)
+}
 
 // 내 상태 (화면이 "무엇을 보여줄지" 정할 때 쓰는 함수)
 // 넣는 값: postId
-// 돌려주는 값: {
-//   isAuthor,         // 내가 쓴 사연인가
-//   hasResponded,     // 이미 투표+댓글 했나
-//   hasPeeked,        // 궁금해요 눌렀나
-//   isClosed,         // 투표 마감됐나
-//   canVote,          // 지금 투표할 수 있나
-//   canSeeResponses,  // 남의 댓글·결과를 볼 수 있나
-// }
+// 돌려주는 값: { isAuthor, hasResponded, hasPeeked, isClosed, canVote, canSeeResponses }
 export async function getMyStatus(postId) {
-  ensureSample(postId)
-  const key = String(postId)
   const me = await getCurrentUser()
-  const post = await getPost(postId)
-
-  const isAuthor = Boolean(me) && fakePosts.some((p) => p.id === Number(postId) && p.user_id === me.id)
-  const hasResponded = Boolean(me) && fakeResponses[key].some((r) => r.user_id === me.id)
-  const hasPeeked = Boolean(me) && fakePeeks[key].includes(me.id)
-  const isClosed = post ? new Date(post.vote_ends_at) <= new Date() : false
+  const [isAuthor, hasResponded, hasPeeked, isClosed] = await Promise.all([
+    me ? ask('is_post_author', postId) : false,
+    me ? ask('has_responded', postId) : false,
+    me ? ask('has_peeked', postId) : false,
+    ask('is_post_closed', postId),
+  ])
 
   return {
     isAuthor,
@@ -46,7 +45,7 @@ export async function getMyStatus(postId) {
 // 넣는 값: postId, optionId (고른 선택지), content (내 경험/의견)
 // 돌려주는 값: { ok: true } 또는 { ok: false, reason }
 //   reason: 'login' (로그인 필요) | 'author' (내 사연) | 'already' (이미 함)
-//           | 'peeked' (궁금해요 누름) | 'closed' (마감됨) | 'empty' (댓글 비어 있음)
+//           | 'peeked' (궁금해요 누름) | 'closed' (마감됨) | 'empty' (댓글 비어 있음) | 'error' (그 밖의 실패)
 export async function respond(postId, optionId, content) {
   const me = await getCurrentUser()
   if (!me) return { ok: false, reason: 'login' }
@@ -58,20 +57,21 @@ export async function respond(postId, optionId, content) {
   if (status.hasPeeked) return { ok: false, reason: 'peeked' }
   if (status.isClosed) return { ok: false, reason: 'closed' }
 
-  fakeResponses[String(postId)].push({
-    id: newId(),
-    option_id: optionId,
-    user_id: me.id,
-    content: content.trim(),
-    created_at: new Date().toISOString(),
-  })
+  const { error } = await supabase
+    .from('responses')
+    .insert({ post_id: Number(postId), option_id: Number(optionId), content: content.trim() })
+  if (error) {
+    console.error('respond 실패:', error)
+    if (error.code === '23505') return { ok: false, reason: 'already' } // 1인 1투표에 걸림
+    return { ok: false, reason: 'error' }
+  }
   return { ok: true }
 }
 
 // 궁금해요 (누르면 댓글은 보이지만 이 사연엔 투표 불가. 되돌릴 수 없음)
 // ※ 누르기 전에 화면에서 "투표 못 하게 돼요" 경고를 꼭 띄울 것
 // 넣는 값: postId
-// 돌려주는 값: { ok: true } 또는 { ok: false, reason }  ('login' | 'author' | 'already')
+// 돌려주는 값: { ok: true } 또는 { ok: false, reason }  ('login' | 'author' | 'already' | 'error')
 export async function peek(postId) {
   const me = await getCurrentUser()
   if (!me) return { ok: false, reason: 'login' }
@@ -80,7 +80,12 @@ export async function peek(postId) {
   if (status.isAuthor) return { ok: false, reason: 'author' }
   if (status.hasResponded || status.hasPeeked) return { ok: false, reason: 'already' }
 
-  fakePeeks[String(postId)].push(me.id)
+  const { error } = await supabase.from('peeks').insert({ post_id: Number(postId) })
+  if (error) {
+    console.error('peek 실패:', error)
+    if (error.code === '23505') return { ok: false, reason: 'already' }
+    return { ok: false, reason: 'error' }
+  }
   return { ok: true }
 }
 
@@ -94,7 +99,16 @@ export async function getResponses(postId) {
   if (!status.canSeeResponses) return []
 
   const me = await getCurrentUser()
-  return fakeResponses[String(postId)].map((r) => ({
+  const { data, error } = await supabase
+    .from('responses')
+    .select('id, option_id, content, created_at, user_id')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true })
+  if (error) {
+    console.error('getResponses 실패:', error)
+    return []
+  }
+  return data.map((r) => ({
     id: r.id,
     option_id: r.option_id,
     content: r.content,
@@ -111,12 +125,17 @@ export async function getResults(postId) {
   const status = await getMyStatus(postId)
   if (!status.canSeeResponses) return []
 
-  const key = String(postId)
-  return [...fakeOptions[key]]
-    .sort((a, b) => a.order - b.order)
-    .map((option) => ({
-      option_id: option.id,
-      label: option.label,
-      count: fakeResponses[key].filter((r) => r.option_id === option.id).length,
-    }))
+  const [{ data: options, error: optionError }, { data: rows, error }] = await Promise.all([
+    supabase.from('options').select('id, label, sort_order').eq('post_id', postId).order('sort_order'),
+    supabase.from('responses').select('option_id').eq('post_id', postId),
+  ])
+  if (optionError || error) {
+    console.error('getResults 실패:', optionError ?? error)
+    return []
+  }
+  return options.map((option) => ({
+    option_id: option.id,
+    label: option.label,
+    count: rows.filter((r) => r.option_id === option.id).length,
+  }))
 }
