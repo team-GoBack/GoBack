@@ -1,20 +1,131 @@
-/* [공통 파일] 팀장만 수정 */
-* { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, sans-serif; background: #f6f6f4; color: #222; }
-a { color: inherit; text-decoration: none; }
-.app { max-width: 640px; margin: 0 auto; padding: 0 16px 40px; }
-.header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
-.logo { font-size: 24px; font-weight: 700; }
-.header-actions { display: flex; gap: 8px; align-items: center; }
-.reels-link { padding: 8px 6px; }
-.login-btn { border: 1px solid #ccc; background: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; font: inherit; }
-.write-btn { background: #222; color: #fff; padding: 8px 14px; border-radius: 8px; }
-.tags { display: flex; gap: 8px; margin-bottom: 16px; }
-.tags button { border: 1px solid #ccc; background: #fff; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
-.tags button.active { background: #222; color: #fff; border-color: #222; }
-.post-card { display: block; background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #e5e5e5; }
-.post-card h3 { margin: 8px 0 4px; }
-.post-card p { margin: 0 0 8px; color: #555; }
-.post-card small { color: #888; }
-.tag { font-size: 12px; background: #eee; padding: 2px 8px; border-radius: 999px; }
-.todo { color: #b45309; background: #fef3c7; padding: 8px 12px; border-radius: 8px; }
+
+/* [공통 파일] 미션 0 디자인 시안 D - 셋로그 */
+
+/* 기본 설정 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #effcf5;
+  color: #222222;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 전체 레이아웃 */
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: #078e4e;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.reels-link {
+  padding: 8px 6px;
+}
+
+/* 로그인 버튼 */
+.login-btn {
+  border: 1px solid #d7e9e2;
+  background: #ffffff;
+  color: #222222;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* 사연 쓰기 버튼 */
+.write-btn {
+  background: #00d96b;
+  color: #191919;
+  padding: 8px 14px;
+  border-radius: 8px;
+}
+
+/* 카테고리 */
+.tags {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tags button {
+  border: 1px solid #d7e9e2;
+  background: #ffffff;
+  color: #344955;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tags button.active {
+  background: #ff4bc1;
+  color: #191919;
+  border-color: #ff4bc1;
+}
+
+/* 사연 카드 */
+.post-card {
+  display: block;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid #f7a8da;
+}
+
+.post-card h3 {
+  margin: 8px 0 4px;
+}
+
+.post-card p {
+  margin: 0 0 8px;
+  color: #555555;
+}
+
+.post-card small {
+  color: #84939c;
+}
+
+/* 사연 태그 */
+.tag {
+  font-size: 12px;
+  background: #e5f9fe;
+  color: #167b91;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* 안내 메시지 */
+.todo {
+  color: #b45309;
+  background: #fef3c7;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
