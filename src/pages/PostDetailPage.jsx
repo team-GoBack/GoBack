@@ -4,7 +4,12 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getPost, getOptions } from '../api/posts.js'
 import { getCurrentUser, onAuthChange } from '../api/auth.js'
-import { getMyStatus, respond } from '../api/responses.js'
+import {
+  getMyStatus,
+  respond,
+  getResults,
+  getResponses,
+} from '../api/responses.js'
 
 export default function PostDetailPage() {
   const { id } = useParams()
@@ -20,6 +25,11 @@ export default function PostDetailPage() {
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // 블라인드 해제 후 보여줄 투표 결과와 댓글
+  const [results, setResults] = useState([])
+  const [responses, setResponses] = useState([])
+  const [isResultsLoading, setIsResultsLoading] = useState(false)
 
   // 로그인·로그아웃 등 인증 상태 변경 감지
   useEffect(() => {
@@ -70,6 +80,44 @@ export default function PostDetailPage() {
       cancelled = true
     }
   }, [id, authUserId])
+
+  // 결과를 볼 수 있는 경우에만 투표 결과와 댓글 불러오기
+  useEffect(() => {
+    let cancelled = false
+
+    setResults([])
+    setResponses([])
+
+    if (!status?.canSeeResponses) {
+      setIsResultsLoading(false)
+      return () => {
+        cancelled = true
+      }
+    }
+
+    setIsResultsLoading(true)
+
+    Promise.all([
+      getResults(id),
+      getResponses(id),
+    ])
+      .then(([resultData, responseData]) => {
+        if (cancelled) return
+
+        setResults(resultData)
+        setResponses(responseData)
+      })
+      .catch((error) => {
+        console.error('투표 결과 및 댓글 불러오기 실패:', error)
+      })
+      .finally(() => {
+        if (!cancelled) setIsResultsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [id, status?.canSeeResponses, authUserId])
 
   // 선택지와 댓글을 함께 제출
   async function handleSubmit(event) {
@@ -128,13 +176,21 @@ export default function PostDetailPage() {
 
   // 투표할 수 없는 이유 안내
   function getVoteNotice() {
+    // 마감된 사연은 로그인 여부보다 마감 안내를 우선 표시
+    if (status.isClosed) return '투표가 마감되었습니다.'
     if (!isLoggedIn) return '로그인 후 이용해 주세요.'
     if (status.isAuthor) return '본인이 작성한 사연에는 투표할 수 없습니다.'
     if (status.hasResponded) return '이미 투표에 참여한 사연입니다.'
     if (status.hasPeeked) return '궁금해요를 사용한 사연에는 투표할 수 없습니다.'
-    if (status.isClosed) return '투표가 마감되었습니다.'
     return '현재 투표할 수 없습니다.'
   }
+
+  // 선택지 ID로 선택지 이름 찾기
+  function getOptionLabel(optionId) {
+    return options.find((option) => option.id === optionId)?.label ?? '선택지'
+  }
+
+  const totalVotes = results.reduce((sum, result) => sum + result.count, 0)
 
   if (isLoading) return <main><p>불러오는 중입니다...</p></main>
   if (!post) return <main><p>사연을 불러올 수 없습니다.</p></main>
@@ -209,8 +265,101 @@ export default function PostDetailPage() {
         {message && <p role="status">{message}</p>}
       </section>
 
+      {/* 미션 3: 투표 결과 및 댓글 블라인드 */}
+      <section style={{ marginTop: '32px' }}>
+        {!status ? (
+          <p>투표 상태를 확인하는 중입니다.</p>
+        ) : !status.canSeeResponses ? (
+          <p>
+            투표에 참여하면 다른 사람들의 선택과 댓글을 확인할 수 있습니다.
+          </p>
+        ) : isResultsLoading ? (
+          <p>투표 결과와 댓글을 불러오는 중입니다...</p>
+        ) : (
+          <>
+            <h3>투표 결과</h3>
+
+            {results.length === 0 ? (
+              <p>아직 투표 결과가 없습니다.</p>
+            ) : (
+              results.map((result) => {
+                const percentage = totalVotes > 0
+                  ? Math.round((result.count / totalVotes) * 100)
+                  : 0
+
+                return (
+                  <div key={result.option_id} style={{ marginBottom: '16px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '6px',
+                      }}
+                    >
+                      <span>{result.label}</span>
+                      <span>{result.count}표 ({percentage}%)</span>
+                    </div>
+
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '12px',
+                        backgroundColor: '#e5e5e5',
+                        borderRadius: '6px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        role="progressbar"
+                        aria-label={`${result.label} 투표 비율`}
+                        aria-valuenow={percentage}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        style={{
+                          width: `${percentage}%`,
+                          height: '100%',
+                          backgroundColor: '#777',
+                          borderRadius: '6px',
+                        }}
+                      />
+                    </div>
+                  </div>
+                )
+              })
+            )}
+
+            <h3 style={{ marginTop: '28px' }}>댓글</h3>
+
+            {responses.length === 0 ? (
+              <p>아직 작성된 댓글이 없습니다.</p>
+            ) : (
+              responses.map((response) => (
+                <article
+                  key={response.id}
+                  style={{
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    padding: '14px',
+                    marginBottom: '10px',
+                  }}
+                >
+                  <p style={{ marginTop: 0, fontWeight: 'bold' }}>
+                    {response.is_mine ? '나' : '익명'}
+                    {' · '}
+                    {getOptionLabel(response.option_id)}
+                  </p>
+                  <p style={{ marginBottom: 0 }}>
+                    {response.content}
+                  </p>
+                </article>
+              ))
+            )}
+          </>
+        )}
+      </section>
+
       <p className="todo">
-        TODO: 투표 결과·댓글 목록, 궁금해요, 타이머
+        TODO: 궁금해요, 타이머
       </p>
     </main>
   )
