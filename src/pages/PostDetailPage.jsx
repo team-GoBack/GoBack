@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getPost, getOptions } from '../api/posts.js'
-import { getCurrentUser } from '../api/auth.js'
+import { getCurrentUser, onAuthChange } from '../api/auth.js'
 import { getMyStatus, respond } from '../api/responses.js'
 
 export default function PostDetailPage() {
@@ -13,6 +13,7 @@ export default function PostDetailPage() {
   const [options, setOptions] = useState([])
   const [status, setStatus] = useState(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [authUserId, setAuthUserId] = useState(undefined)
 
   const [selectedOptionId, setSelectedOptionId] = useState(null)
   const [comment, setComment] = useState('')
@@ -20,6 +21,19 @@ export default function PostDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // 로그인·로그아웃 등 인증 상태 변경 감지
+  useEffect(() => {
+    const unsubscribe = onAuthChange((user) => {
+      setIsLoggedIn(Boolean(user))
+      setAuthUserId(user?.id ?? null)
+    })
+
+    return () => {
+      unsubscribe()
+    }
+  }, [])
+
+  // 사연 정보와 현재 사용자의 투표 상태 불러오기
   useEffect(() => {
     let cancelled = false
 
@@ -55,13 +69,13 @@ export default function PostDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, authUserId])
 
   // 선택지와 댓글을 함께 제출
   async function handleSubmit(event) {
     event.preventDefault()
 
-    if (!status?.canVote || isSubmitting) return
+    if (!isLoggedIn || !status?.canVote || isSubmitting) return
 
     if (selectedOptionId === null) {
       setMessage('선택지를 하나 선택해 주세요.')
@@ -138,7 +152,7 @@ export default function PostDetailPage() {
           <button
             key={option.id}
             type="button"
-            disabled={!status?.canVote || isSubmitting}
+            disabled={!isLoggedIn || !status?.canVote || isSubmitting}
             onClick={() => setSelectedOptionId(option.id)}
             style={{
               display: 'block',
@@ -155,7 +169,7 @@ export default function PostDetailPage() {
                 : '#fff',
               color: '#222',
               opacity: 1,
-              cursor: status?.canVote ? 'pointer' : 'default',
+              cursor: isLoggedIn && status?.canVote ? 'pointer' : 'default',
             }}
           >
             {option.label}
@@ -164,7 +178,7 @@ export default function PostDetailPage() {
 
         {!status ? (
           <p>투표 상태를 확인할 수 없습니다.</p>
-        ) : status.canVote ? (
+        ) : isLoggedIn && status.canVote ? (
           <form onSubmit={handleSubmit}>
             <label htmlFor="vote-comment">내 경험이나 의견</label>
 
