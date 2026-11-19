@@ -1,5 +1,5 @@
 
- // [프론트 팀] 사연 상세 페이지 (선택지 표시, 투표·댓글 작성 구현)
+ // [프론트 팀] 사연 상세 페이지 (선택지, 투표·댓글, 블라인드, 궁금해요 구현)
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getPost, getOptions } from '../api/posts.js'
@@ -7,6 +7,7 @@ import { getCurrentUser, onAuthChange } from '../api/auth.js'
 import {
   getMyStatus,
   respond,
+  peek,
   getResults,
   getResponses,
 } from '../api/responses.js'
@@ -25,6 +26,7 @@ export default function PostDetailPage() {
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPeeking, setIsPeeking] = useState(false)
 
   // 블라인드 해제 후 보여줄 투표 결과와 댓글
   const [results, setResults] = useState([])
@@ -123,7 +125,7 @@ export default function PostDetailPage() {
   async function handleSubmit(event) {
     event.preventDefault()
 
-    if (!isLoggedIn || !status?.canVote || isSubmitting) return
+    if (!isLoggedIn || !status?.canVote || isSubmitting || isPeeking) return
 
     if (selectedOptionId === null) {
       setMessage('선택지를 하나 선택해 주세요.')
@@ -174,6 +176,73 @@ export default function PostDetailPage() {
     }
   }
 
+  // 미션 4: 궁금해요 사용 시 투표 권한 포기 후 결과 공개
+  async function handlePeek() {
+    if (!status || isPeeking || isSubmitting) return
+
+    if (!isLoggedIn) {
+      setMessage('로그인 후 이용해 주세요.')
+      return
+    }
+
+    if (!status.canVote) {
+      setMessage(getVoteNotice())
+      return
+    }
+
+    // 궁금해요 사용 기록은 되돌릴 수 없으므로 먼저 확인
+    const confirmed = window.confirm(
+      '궁금해요를 사용하면 투표 결과와 댓글을 볼 수 있지만,\n' +
+      '이 사연에는 더 이상 투표하거나 댓글을 작성할 수 없습니다.\n\n' +
+      '계속하시겠습니까?'
+    )
+
+    if (!confirmed) return
+
+    setIsPeeking(true)
+    setMessage('')
+
+    try {
+      const result = await peek(id)
+
+      if (result.ok) {
+        setStatus((prev) => ({
+          ...prev,
+          hasPeeked: true,
+          canVote: false,
+          canSeeResponses: true,
+        }))
+
+        setSelectedOptionId(null)
+        setComment('')
+        setMessage('궁금해요를 사용했습니다. 투표 결과와 댓글을 확인할 수 있습니다.')
+      } else {
+        const errorMessages = {
+          login: '로그인 후 이용해 주세요.',
+          author: '본인이 작성한 사연에는 궁금해요를 사용할 수 없습니다.',
+          already: '이미 투표했거나 궁금해요를 사용한 사연입니다.',
+          error: '궁금해요 처리에 실패했습니다. 다시 시도해 주세요.',
+        }
+
+        setMessage(
+          errorMessages[result.reason] ??
+          '궁금해요 처리 중 오류가 발생했습니다.'
+        )
+
+        // 실패한 경우 서버의 최신 상태를 다시 확인
+        const latestStatus = await getMyStatus(id)
+        setStatus(latestStatus)
+
+        if (result.reason === 'login') setIsLoggedIn(false)
+      }
+    } catch (error) {
+      console.error('궁금해요 처리 실패:', error)
+      setMessage('오류가 발생했습니다. 잠시 후 다시 시도해 주세요.')
+    } finally {
+      setIsPeeking(false)
+    }
+  }
+
   // 투표할 수 없는 이유 안내
   function getVoteNotice() {
     // 마감된 사연은 로그인 여부보다 마감 안내를 우선 표시
@@ -208,7 +277,7 @@ export default function PostDetailPage() {
           <button
             key={option.id}
             type="button"
-            disabled={!isLoggedIn || !status?.canVote || isSubmitting}
+            disabled={!isLoggedIn || !status?.canVote || isSubmitting || isPeeking}
             onClick={() => setSelectedOptionId(option.id)}
             style={{
               display: 'block',
@@ -225,7 +294,9 @@ export default function PostDetailPage() {
                 : '#fff',
               color: '#222',
               opacity: 1,
-              cursor: isLoggedIn && status?.canVote ? 'pointer' : 'default',
+              cursor: isLoggedIn && status?.canVote && !isPeeking
+                ? 'pointer'
+                : 'default',
             }}
           >
             {option.label}
@@ -254,13 +325,40 @@ export default function PostDetailPage() {
               }}
             />
 
-            <button type="submit" disabled={isSubmitting}>
+            <button
+              type="submit"
+              disabled={isSubmitting || isPeeking}
+            >
               {isSubmitting ? '제출 중...' : '투표와 댓글 등록'}
             </button>
           </form>
         ) : (
           <p>{getVoteNotice()}</p>
         )}
+
+        {/* 미션 4: 투표하지 않은 사용자의 궁금해요 버튼 */}
+        {status &&
+          !status.isAuthor &&
+          !status.hasResponded &&
+          !status.hasPeeked &&
+          !status.isClosed && (
+            <button
+              type="button"
+              onClick={handlePeek}
+              disabled={isPeeking || isSubmitting}
+              style={{
+                marginTop: '12px',
+                padding: '10px 18px',
+                border: '1px solid #aaa',
+                borderRadius: '8px',
+                backgroundColor: '#fff',
+                color: '#222',
+                cursor: isPeeking ? 'default' : 'pointer',
+              }}
+            >
+              {isPeeking ? '처리 중...' : '궁금해요'}
+            </button>
+          )}
 
         {message && <p role="status">{message}</p>}
       </section>
@@ -359,7 +457,7 @@ export default function PostDetailPage() {
       </section>
 
       <p className="todo">
-        TODO: 궁금해요, 타이머
+        TODO: 타이머
       </p>
     </main>
   )
