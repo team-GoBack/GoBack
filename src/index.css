@@ -57,7 +57,37 @@ main:not(:has(> .post-card)) { max-width: 680px; margin: 0 auto; }
 .logo { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
 .logo::after { content: '.'; color: var(--accent); }
 .header-actions { display: flex; gap: 8px; align-items: center; }
-.reels-link { padding: 10px 8px; font-size: 15px; }
+.reels-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.reels-link:hover { background: rgba(255, 255, 255, 0.75); }
+
+/* 구글 로그인 버튼 (흰 바탕 + 구글 G 로고) */
+.google-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid #dadce0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #3c4043;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.google-btn:hover { background: #f8f9fa; box-shadow: 0 10px 26px rgba(60, 20, 40, 0.1); }
 .login-btn {
   font: inherit;
   font-size: 15px;
@@ -178,4 +208,6 @@ main:has(> .post-card) > .post-card:first-of-type small { left: 32px; bottom: 24
   main:has(> .post-card) > .post-card:first-of-type { grid-column: auto; grid-row: auto; padding: 22px 22px 52px; }
   main:has(> .post-card) > .post-card:first-of-type h3 { font-size: 22px; }
   .header-actions { gap: 4px; }
+  .reels-link span, .google-btn span { display: none; } /* 폰에선 아이콘만 */
+  .google-btn { padding: 10px 12px; }
 }
