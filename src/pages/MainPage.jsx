@@ -20,13 +20,12 @@ export default function MainPage() {
     getPosts(tag === '전체' ? null : tag).then(setPosts)
   }, [tag])
 
-  // 받아온 목록을 복사해서 순서만 바꿈 (원본 posts는 그대로 둠)
-  const sortedPosts = [...posts].sort((a, b) => {
-    if (sort === 'popular') {
-      return (b.response_count || 0) - (a.response_count || 0)
-    }
-    return new Date(b.created_at) - new Date(a.created_at)
-  })
+  // 투표 많은 순: 복사본을 response_count 기준으로 정렬 (원본 posts는 그대로 둠)
+  // 최신순: API가 준 순서 그대로 보여 줌
+  const sortedPosts =
+    sort === 'popular'
+      ? [...posts].sort((a, b) => (b.response_count || 0) - (a.response_count || 0))
+      : posts
 
   return (
     <main>
