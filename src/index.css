@@ -33,7 +33,10 @@ body {
 
 a { color: inherit; text-decoration: none; }
 
-.app { max-width: 640px; margin: 0 auto; padding: 0 16px 48px; }
+.app { max-width: 1200px; margin: 0 auto; padding: 0 24px 48px; }
+
+/* 상세·작성 페이지처럼 글을 읽는 화면은 가운데 좁게 */
+main:not(:has(> .post-card)) { max-width: 680px; margin: 0 auto; }
 
 /* ===== 헤더 (스크롤해도 위에 붙어 있는 유리 바) ===== */
 .header {
@@ -44,8 +47,8 @@ a { color: inherit; text-decoration: none; }
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  margin: 0 -16px 8px;
-  padding: 18px 16px;
+  margin: 0 -24px 8px;
+  padding: 18px 24px;
   background: rgba(251, 247, 248, 0.7);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   backdrop-filter: blur(16px) saturate(140%);
@@ -80,7 +83,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ===== 태그·정렬 버튼 (알약 모양) ===== */
-.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
 .tags button {
   font: inherit;
   font-size: 14px;
@@ -126,3 +129,53 @@ a { color: inherit; text-decoration: none; }
 }
 
 .todo { color: #b45309; background: #fef3c7; padding: 8px 12px; border-radius: 8px; }
+
+/* ===== 메인 페이지: 벤토 그리드 (카드 모양만 바꿈, 화면 파일은 그대로) ===== */
+main:has(> .post-card) {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+/* 태그·정렬 줄, "사연이 없어요"는 한 줄 전체 */
+main:has(> .post-card) > :not(.post-card) { grid-column: 1 / -1; }
+main:has(> .post-card) > .tags { margin-bottom: 0; }
+
+main:has(> .post-card) > .post-card {
+  position: relative;
+  min-height: 200px;
+  margin: 0;
+  padding: 20px 22px 48px;
+  border-radius: 24px;
+}
+main:has(> .post-card) > .post-card p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+main:has(> .post-card) > .post-card small { position: absolute; left: 22px; bottom: 18px; }
+
+/* 첫 번째 카드 = 큰 칸 (투표 많은 순이면 참여 1위, 최신순이면 최신 사연) */
+main:has(> .post-card) > .post-card:first-of-type {
+  grid-column: span 2;
+  grid-row: span 2;
+  padding: 30px 32px 56px;
+  border-radius: 28px;
+}
+main:has(> .post-card) > .post-card:first-of-type h3 { font-size: 30px; line-height: 1.3; margin: 14px 0 12px; }
+main:has(> .post-card) > .post-card:first-of-type p { font-size: 16px; line-height: 1.7; -webkit-line-clamp: 6; max-width: 520px; }
+main:has(> .post-card) > .post-card:first-of-type small { left: 32px; bottom: 24px; font-size: 14px; }
+
+/* 태블릿: 2열 */
+@media (max-width: 900px) {
+  main:has(> .post-card) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* 폰: 1열, 큰 칸도 한 칸 */
+@media (max-width: 560px) {
+  main:has(> .post-card) { grid-template-columns: minmax(0, 1fr); }
+  main:has(> .post-card) > .post-card { min-height: 0; }
+  main:has(> .post-card) > .post-card:first-of-type { grid-column: auto; grid-row: auto; padding: 22px 22px 52px; }
+  main:has(> .post-card) > .post-card:first-of-type h3 { font-size: 22px; }
+  .header-actions { gap: 4px; }
+}
