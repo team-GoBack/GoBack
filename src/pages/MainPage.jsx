@@ -1,3 +1,4 @@
+
 // [프론트 팀] 메인 페이지: 사연 목록
 // 흐름: 화면이 열림 → getPosts()로 주문 → 처음 열 때만 "불러오는 중..." → 받은 사연을 정렬해서 카드로 그림
 import { useEffect, useState } from 'react'
@@ -50,24 +51,36 @@ export default function MainPage() {
 
   return (
     <main>
-      <div className="tags">
-        {TAGS.map((t) => (
-          <button key={t} onClick={() => setTag(t)} className={t === tag ? 'active' : ''}>
-            {t}
-          </button>
-        ))}
-      </div>
+      {/* 카테고리 왼쪽, 정렬 버튼 오른쪽 배치 */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '6px',
+        }}
+      >
+        <div className="tags" style={{ marginBottom: 0 }}>
+          {TAGS.map((t) => (
+            <button key={t} onClick={() => setTag(t)} className={t === tag ? 'active' : ''}>
+              {t}
+            </button>
+          ))}
+        </div>
 
-      <div className="tags">
-        {SORTS.map((s) => (
-          <button
-            key={s.key}
-            onClick={() => setSort(s.key)}
-            className={s.key === sort ? 'active' : ''}
-          >
-            {s.label}
-          </button>
-        ))}
+        <div className="tags" style={{ marginBottom: 0 }}>
+          {SORTS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setSort(s.key)}
+              className={s.key === sort ? 'active' : ''}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading && !hasLoaded && <p>불러오는 중...</p>}
