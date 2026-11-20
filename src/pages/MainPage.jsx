@@ -1,5 +1,5 @@
 // [프론트 팀] 메인 페이지: 사연 목록
-// 흐름: 화면이 열림 → getPosts()로 주문 → 받는 동안 "불러오는 중..." → 받은 사연을 정렬해서 카드로 그림
+// 흐름: 화면이 열림 → getPosts()로 주문 → 처음 열 때만 "불러오는 중..." → 받은 사연을 정렬해서 카드로 그림
 import { useEffect, useState } from 'react'
 import { getPosts } from '../api/posts.js'
 import PostCard from '../components/PostCard.jsx'
@@ -13,6 +13,7 @@ const SORTS = [
 export default function MainPage() {
   const [posts, setPosts] = useState([])     // 받아온 사연 목록을 기억하는 곳
   const [loading, setLoading] = useState(true) // 지금 데이터를 기다리는 중인지 기억하는 곳
+  const [hasLoaded, setHasLoaded] = useState(false) // 처음 한 번이라도 받아왔는지 기억하는 곳
   const [tag, setTag] = useState('전체')      // 지금 고른 카테고리
   const [sort, setSort] = useState('latest') // 지금 고른 정렬 방식
 
@@ -29,7 +30,10 @@ export default function MainPage() {
         if (!ignore) setPosts([])
       })
       .finally(() => {
-        if (!ignore) setLoading(false) // 답이 오면(성공이든 실패든) "기다리는 중" 끝
+        if (!ignore) {
+          setLoading(false)   // 답이 오면(성공이든 실패든) "기다리는 중" 끝
+          setHasLoaded(true)  // 처음 한 번은 받아왔다고 기억
+        }
       })
 
     return () => {
@@ -66,9 +70,9 @@ export default function MainPage() {
         ))}
       </div>
 
-      {loading && <p>불러오는 중...</p>}
+      {loading && !hasLoaded && <p>불러오는 중...</p>}
       {!loading && sortedPosts.length === 0 && <p>사연이 없어요.</p>}
-      {!loading && sortedPosts.map((post) => (
+      {sortedPosts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
     </main>
