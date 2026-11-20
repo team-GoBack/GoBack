@@ -1,5 +1,5 @@
 // [프론트 팀] 메인 페이지: 사연 목록
-// 흐름: 화면이 열림 → getPosts()로 주문 → 받은 사연을 정렬해서 카드로 그림
+// 흐름: 화면이 열림 → getPosts()로 주문 → 받는 동안 "불러오는 중..." → 받은 사연을 정렬해서 카드로 그림
 import { useEffect, useState } from 'react'
 import { getPosts } from '../api/posts.js'
 import PostCard from '../components/PostCard.jsx'
@@ -12,12 +12,29 @@ const SORTS = [
 
 export default function MainPage() {
   const [posts, setPosts] = useState([])     // 받아온 사연 목록을 기억하는 곳
+  const [loading, setLoading] = useState(true) // 지금 데이터를 기다리는 중인지 기억하는 곳
   const [tag, setTag] = useState('전체')      // 지금 고른 카테고리
   const [sort, setSort] = useState('latest') // 지금 고른 정렬 방식
 
   // tag가 바뀔 때마다 주문 창구에 다시 주문
   useEffect(() => {
-    getPosts(tag === '전체' ? null : tag).then(setPosts)
+    let ignore = false // 카테고리를 빨리 바꿨을 때 옛날 주문 결과가 덮어쓰지 않게 하는 표시
+    setLoading(true)   // 주문 넣기 전에 "기다리는 중"으로 바꿈
+
+    getPosts(tag === '전체' ? null : tag)
+      .then((result) => {
+        if (!ignore) setPosts(result || [])
+      })
+      .catch(() => {
+        if (!ignore) setPosts([])
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false) // 답이 오면(성공이든 실패든) "기다리는 중" 끝
+      })
+
+    return () => {
+      ignore = true
+    }
   }, [tag])
 
   // 투표 많은 순: 복사본을 response_count 기준으로 정렬 (원본 posts는 그대로 둠)
@@ -49,8 +66,9 @@ export default function MainPage() {
         ))}
       </div>
 
-      {sortedPosts.length === 0 && <p>사연이 없어요.</p>}
-      {sortedPosts.map((post) => (
+      {loading && <p>불러오는 중...</p>}
+      {!loading && sortedPosts.length === 0 && <p>사연이 없어요.</p>}
+      {!loading && sortedPosts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
     </main>
