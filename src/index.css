@@ -112,6 +112,12 @@ main:not(:has(> .post-card)) { max-width: 680px; margin: 0 auto; }
   font-weight: 700;
 }
 
+/* ===== 메인 맨 위 캐치프레이즈 ===== */
+.hero { padding: 28px 4px 22px; }
+.hero h1 { margin: 0 0 8px; font-size: 34px; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { margin: 0; font-size: 17px; color: var(--muted); }
+
 /* ===== 태그·정렬 버튼 (알약 모양) ===== */
 .tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
 .tags button {
@@ -207,6 +213,9 @@ main:has(> .post-card) > .post-card:first-of-type small { left: 32px; bottom: 24
   main:has(> .post-card) > .post-card { min-height: 0; }
   main:has(> .post-card) > .post-card:first-of-type { grid-column: auto; grid-row: auto; padding: 22px 22px 52px; }
   main:has(> .post-card) > .post-card:first-of-type h3 { font-size: 22px; }
+  .hero { padding: 16px 2px 14px; }
+  .hero h1 { font-size: 24px; }
+  .hero p { font-size: 15px; }
   .header-actions { gap: 4px; }
   .reels-link span, .google-btn span { display: none; } /* 폰에선 아이콘만 */
   .google-btn { padding: 10px 12px; }

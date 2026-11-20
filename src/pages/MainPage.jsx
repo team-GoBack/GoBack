@@ -51,6 +51,12 @@ export default function MainPage() {
 
   return (
     <main>
+      {/* 캐치프레이즈: 고백(告白) + Go back(되돌리다) */}
+      <section className="hero">
+        <h1>당신의 사연을 <em>고백</em>해주세요.</h1>
+        <p>후회를 되돌려 드립니다.</p>
+      </section>
+
       {/* 카테고리 왼쪽, 정렬 버튼 오른쪽 배치 */}
       <div
         style={{
