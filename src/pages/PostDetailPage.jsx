@@ -10,6 +10,9 @@ import {
   getResults,
   getResponses,
 } from '../api/responses.js'
+import VoteResults from '../components/VoteResults.jsx'
+import ResponseList from '../components/ResponseList.jsx'
+import VoteForm from '../components/VoteForm.jsx'
 
 const detailCardStyle = {
   padding: '24px',
@@ -38,16 +41,6 @@ const detailTagStyle = {
   whiteSpace: 'nowrap',
 }
 
-const secondaryButtonStyle = {
-  padding: '10px 18px',
-  border: '1px solid var(--border)',
-  borderRadius: '10px',
-  background: 'var(--card)',
-  color: 'var(--ink)',
-  font: 'inherit',
-  cursor: 'pointer',
-}
-
 function formatDate(value) {
   if (!value) return ''
   const date = new Date(value)
@@ -59,17 +52,6 @@ function formatDate(value) {
     hour: '2-digit',
     minute: '2-digit',
   })
-}
-
-// 댓글 작성 시각만 연도·오전/오후 없이 24시간제로 표시
-function formatCommentDate(value) {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${hour}:${minute}`
 }
 
 export default function PostDetailPage() {
@@ -314,11 +296,6 @@ export default function PostDetailPage() {
     return '현재 투표할 수 없습니다.'
   }
 
-  // 선택지 ID로 선택지 이름 찾기
-  function getOptionLabel(optionId) {
-    return options.find((option) => option.id === optionId)?.label ?? '선택지'
-  }
-
   // 사연에 참여한 기록과 마감 여부를 함께 표시
   function getParticipationNotice() {
     if (!status) return '참여 상태를 확인할 수 없습니다.'
@@ -330,9 +307,6 @@ export default function PostDetailPage() {
 
     return status.isClosed ? `${participation} · 마감` : participation
   }
-
-  const totalVotes = results.reduce((sum, result) => sum + result.count, 0)
-  const maxVotes = Math.max(0, ...results.map((result) => result.count))
 
   if (isLoading) return <main><p>불러오는 중입니다...</p></main>
   if (!post) return <main><p>사연을 불러올 수 없습니다.</p></main>
@@ -391,138 +365,20 @@ export default function PostDetailPage() {
         {!status ? (
           <p>투표 상태를 확인할 수 없습니다.</p>
         ) : !status.canSeeResponses ? (
-          <>
-            <h3 style={{ margin: '0 0 18px' }}>여러분이라면 어떻게 하시겠어요?</h3>
-
-            {/* 아직 결과를 볼 수 없는 사용자에게만 선택지 표시 */}
-            {options.map((option) => {
-              const isSelected = selectedOptionId === option.id
-              const canSelect = isLoggedIn && status.canVote && !isSubmitting && !isPeeking
-
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  disabled={!canSelect}
-                  onClick={() => setSelectedOptionId(option.id)}
-                  aria-pressed={isSelected}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                    width: '100%',
-                    minHeight: '52px',
-                    padding: '14px 16px',
-                    marginBottom: '10px',
-                    textAlign: 'left',
-                    border: '1px solid var(--border)',
-                    borderRadius: '12px',
-                    backgroundColor: isSelected
-                      ? 'color-mix(in srgb, var(--ink) 4%, var(--card))'
-                      : 'var(--card)',
-                    color: 'var(--ink)',
-                    font: 'inherit',
-                    fontWeight: 400,
-                    appearance: 'none',
-                    boxShadow: 'none',
-                    backdropFilter: 'blur(12px) saturate(130%)',
-                    WebkitBackdropFilter: 'blur(12px) saturate(130%)',
-                    opacity: canSelect ? 1 : 0.6,
-                    cursor: canSelect ? 'pointer' : 'default',
-                    transition: 'background-color 0.2s ease',
-                  }}
-                >
-                  <span style={{ flex: 1, overflowWrap: 'anywhere' }}>
-                    {option.label}
-                  </span>
-                </button>
-              )
-            })}
-
-            {isLoggedIn && status.canVote ? (
-              <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
-                <label htmlFor="vote-comment" style={{ fontWeight: 700 }}>
-                  내 경험이나 의견
-                </label>
-                <textarea
-                  id="vote-comment"
-                  value={comment}
-                  onChange={(event) => setComment(event.target.value)}
-                  placeholder="선택한 이유나 경험을 작성해 주세요."
-                  rows={4}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    padding: '12px',
-                    margin: '10px 0 12px',
-                    border: '1px solid var(--border)',
-                    borderRadius: '12px',
-                    background: 'var(--card)',
-                    color: 'var(--ink)',
-                    font: 'inherit',
-                    resize: 'vertical',
-                  }}
-                />
-                {/* PC에서는 가로 정렬, 좁은 화면에서는 자동 줄바꿈 */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'stretch',
-                    gap: '10px',
-                  }}
-                >
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || isPeeking}
-                    style={{
-                      flex: '3 1 220px',
-                      minHeight: '48px',
-                      padding: '12px 20px',
-                      border: '1px solid var(--primary)',
-                      borderRadius: '10px',
-                      background: 'var(--primary)',
-                      color: 'var(--on-primary)',
-                      font: 'inherit',
-                      fontWeight: 700,
-                      opacity: isSubmitting || isPeeking ? 0.7 : 1,
-                      cursor: isSubmitting || isPeeking ? 'default' : 'pointer',
-                    }}
-                  >
-                    {isSubmitting ? '제출 중...' : '투표와 댓글 등록'}
-                  </button>
-                  {/* 미션 4: 투표하지 않은 사용자의 궁금해요 버튼 */}
-                  {isLoggedIn &&
-                    !status.isAuthor &&
-                    !status.hasResponded &&
-                    !status.hasPeeked &&
-                    !status.isClosed && (
-                      <button
-                        type="button"
-                        onClick={handlePeek}
-                        disabled={isPeeking || isSubmitting}
-                        style={{
-                          ...secondaryButtonStyle,
-                          flex: '1 1 130px',
-                          minHeight: '48px',
-                          backdropFilter: 'blur(12px) saturate(130%)',
-                          WebkitBackdropFilter: 'blur(12px) saturate(130%)',
-                          opacity: isPeeking || isSubmitting ? 0.7 : 1,
-                          cursor: isPeeking || isSubmitting ? 'default' : 'pointer',
-                        }}
-                      >
-                        {isPeeking ? '처리 중...' : '궁금해요'}
-                      </button>
-                    )}
-                </div>
-              </form>
-            ) : (
-              <p style={{ margin: '16px 0 0', color: 'var(--muted)' }}>
-                {getVoteNotice()}
-              </p>
-            )}
-          </>
+          <VoteForm
+            options={options}
+            selectedOptionId={selectedOptionId}
+            setSelectedOptionId={setSelectedOptionId}
+            comment={comment}
+            setComment={setComment}
+            status={status}
+            isLoggedIn={isLoggedIn}
+            isSubmitting={isSubmitting}
+            isPeeking={isPeeking}
+            handleSubmit={handleSubmit}
+            handlePeek={handlePeek}
+            getVoteNotice={getVoteNotice}
+          />
         ) : (
           <>
             {/* 미션 3: 투표 결과 및 댓글 블라인드 */}
@@ -530,176 +386,9 @@ export default function PostDetailPage() {
               <p>투표 결과와 댓글을 불러오는 중입니다...</p>
             ) : (
               <>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                    flexWrap: 'wrap',
-                    marginBottom: '20px',
-                  }}
-                >
-                  <h3 style={{ margin: 0 }}>투표 결과</h3>
-                  <span style={{ color: 'var(--muted)', fontSize: '13px' }}>
-                    총 {totalVotes}명 참여
-                  </span>
-                </div>
-                {results.length === 0 ? (
-                  <p style={{ color: 'var(--muted)' }}>아직 투표 결과가 없습니다.</p>
-                ) : (
-                  results.map((result) => {
-                    const percentage = totalVotes > 0
-                      ? Math.round((result.count / totalVotes) * 100)
-                      : 0
-                    // 0표일 때는 강조하지 않고, 공동 1위는 모두 강조
-                    const isTopChoice = maxVotes > 0 && result.count === maxVotes
+                <VoteResults results={results} />
 
-                    return (
-                      <div key={result.option_id} style={{ marginBottom: '20px' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            gap: '12px',
-                            marginBottom: '8px',
-                          }}
-                        >
-                          <span style={{ overflowWrap: 'anywhere' }}>{result.label}</span>
-                          <span style={{ whiteSpace: 'nowrap', color: 'var(--muted)' }}>
-                            {result.count}표 ({percentage}%)
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            width: '100%',
-                            height: '8px',
-                            borderRadius: '999px',
-                            background: 'var(--border)',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <div
-                            role="progressbar"
-                            aria-label={`${result.label} 투표 비율`}
-                            aria-valuenow={percentage}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                            style={{
-                              width: `${percentage}%`,
-                              height: '100%',
-                              borderRadius: '999px',
-                              background: isTopChoice
-                                ? 'var(--primary)'
-                                : 'color-mix(in srgb, var(--muted) 45%, var(--card))',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-
-                <div style={{ borderTop: '1px solid var(--border)', marginTop: '26px' }}>
-                  <h3 style={{ margin: '24px 0 8px' }}>댓글 {responses.length}</h3>
-                  {responses.length === 0 ? (
-                    <p style={{ color: 'var(--muted)' }}>아직 작성된 댓글이 없습니다.</p>
-                  ) : (
-                    responses.map((response, index) => (
-                      <article
-                        key={response.id}
-                        style={{
-                          padding: '16px 0',
-                          borderBottom: index === responses.length - 1
-                            ? 'none'
-                            : '1px solid var(--border)',
-                        }}
-                      >
-                        {/* 작성자와 선택지 태그, 작성 시각을 같은 영역에 표시 */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            flexWrap: 'wrap',
-                            gap: '8px 12px',
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              flexWrap: 'wrap',
-                              flex: '1 1 180px',
-                              minWidth: 0,
-                              gap: '8px',
-                            }}
-                          >
-                            <span
-                              aria-hidden="true"
-                              style={{
-                                display: 'inline-flex',
-                                width: '28px',
-                                height: '28px',
-                                flexShrink: 0,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: '50%',
-                                background: 'var(--border)',
-                                color: 'var(--muted)',
-                              }}
-                            >
-                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
-                                <path d="M4.5 20c0-4.2 3.4-6.5 7.5-6.5s7.5 2.3 7.5 6.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                              </svg>
-                            </span>
-                            <strong style={{ fontSize: '16px' }}>
-                              {response.is_mine ? '나' : '익명'}
-                            </strong>
-                            {/* 선택한 답변을 은은한 태그로 표시 */}
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                maxWidth: '100%',
-                                padding: '5px 10px',
-                                borderRadius: '999px',
-                                background: 'color-mix(in srgb, var(--ink) 5%, var(--card))',
-                                color: 'var(--ink)',
-                                fontSize: '15px',
-                                fontWeight: 500,
-                                lineHeight: 1.3,
-                                overflowWrap: 'anywhere',
-                              }}
-                            >
-                              {getOptionLabel(response.option_id)}
-                            </span>
-                          </div>
-                          {formatCommentDate(response.created_at) && (
-                            <time
-                              dateTime={response.created_at}
-                              style={{ fontSize: '12px', color: 'var(--muted)', whiteSpace: 'nowrap' }}
-                            >
-                              {formatCommentDate(response.created_at)}
-                            </time>
-                          )}
-                        </div>
-
-                        <p
-                          style={{
-                            margin: '16px 0 0',
-                            lineHeight: 1.65,
-                            whiteSpace: 'pre-wrap',
-                            overflowWrap: 'anywhere',
-                            color: 'var(--ink)',
-                          }}
-                        >
-                          {response.content}
-                        </p>
-                      </article>
-                    ))
-                  )}
-                </div>
+                <ResponseList responses={responses} options={options} />
               </>
             )}
           </>
