@@ -13,6 +13,7 @@ import {
 import VoteResults from '../components/VoteResults.jsx'
 import ResponseList from '../components/ResponseList.jsx'
 import VoteForm from '../components/VoteForm.jsx'
+import VoteTimer from '../components/VoteTimer.jsx'
 
 const detailCardStyle = {
   padding: '24px',
@@ -46,7 +47,6 @@ function formatDate(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
   return date.toLocaleString('ko-KR', {
-    year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
@@ -161,7 +161,7 @@ export default function PostDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [id, status?.canSeeResponses, authUserId])
+  }, [id, status?.canSeeResponses, status?.isClosed, authUserId])
 
   // 선택지와 댓글을 함께 제출
   async function handleSubmit(event) {
@@ -285,6 +285,16 @@ export default function PostDetailPage() {
     }
   }
 
+  // 미션 5: 마감 시각이 되면 서버에서 최신 참여 상태 확인
+  async function handleVoteExpire() {
+    try {
+      const latestStatus = await getMyStatus(id)
+      setStatus(latestStatus)
+    } catch (error) {
+      console.error('투표 마감 상태 갱신 실패:', error)
+    }
+  }
+
   // 투표할 수 없는 이유 안내
   function getVoteNotice() {
     // 마감된 사연은 로그인 여부보다 마감 안내를 우선 표시
@@ -313,7 +323,7 @@ export default function PostDetailPage() {
 
   return (
     <main style={{ paddingBottom: '32px' }}>
-      {/* 사연 본문 카드: 남은 시간 계산은 미션 5에서 추가 */}
+      {/* 사연 본문 카드: 투표 마감 시각 및 남은 시간 표시 */}
       <section style={{ ...detailCardStyle, marginBottom: '18px' }}>
         <div
           style={{
@@ -347,17 +357,51 @@ export default function PostDetailPage() {
           {post.content}
         </p>
         {post.vote_ends_at && (
-          <p
+          <div
             style={{
-              margin: 0,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '8px 16px',
               paddingTop: '14px',
               borderTop: '1px solid var(--border)',
-              color: 'var(--muted)',
-              fontSize: '13px',
             }}
           >
-            {status?.isClosed ? '투표 마감 시각' : '투표 마감 예정'} · {formatDate(post.vote_ends_at)}
-          </p>
+            {/* 남은 시간은 눈에 잘 띄게, 정확한 마감 시각은 보조 정보로 표시 */}
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: 'var(--ink)',
+                fontSize: '14px',
+                fontWeight: 500,
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--muted)"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+              {status?.isClosed ? '마감됨' : <VoteTimer voteEndsAt={post.vote_ends_at} onExpire={handleVoteExpire} />}
+            </span>
+            <time
+              dateTime={post.vote_ends_at}
+              style={{ color: 'var(--muted)', fontSize: '13px' }}
+            >
+              {formatDate(post.vote_ends_at)} 마감
+            </time>
+          </div>
         )}
       </section>
 
