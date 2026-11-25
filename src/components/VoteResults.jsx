@@ -107,7 +107,7 @@ export default function VoteResults({ results, myOptionId }) {
                     height: '100%',
                     borderRadius: '999px',
                     background: isTopChoice
-                      ? 'var(--primary)'
+                      ? '#454545'
                       : 'color-mix(in srgb, var(--muted) 45%, var(--card))',
                   }}
                 />
