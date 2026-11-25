@@ -430,7 +430,14 @@ export default function PostDetailPage() {
               <p>투표 결과와 댓글을 불러오는 중입니다...</p>
             ) : (
               <>
-                <VoteResults results={results} />
+                <VoteResults
+                  results={results}
+                  myOptionId={
+                    isLoggedIn && status?.hasResponded
+                    ? responses.find((response) => response.is_mine)?.option_id
+                    : undefined
+                  }
+              />
 
                 <ResponseList responses={responses} options={options} />
               </>

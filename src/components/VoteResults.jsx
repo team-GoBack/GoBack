@@ -1,8 +1,9 @@
 
 // [프론트 팀] 투표 결과 컴포넌트 (득표수, 비율, 결과 그래프)
 // props로 투표 결과 목록(results)을 받아 선택지별 결과를 화면에 표시
+// myOptionId를 받아 내가 투표한 선택지를 표시
 
-export default function VoteResults({ results }) {
+export default function VoteResults({ results, myOptionId }) {
   const totalVotes = results.reduce((sum, result) => sum + result.count, 0)
   const maxVotes = Math.max(0, ...results.map((result) => result.count))
 
@@ -19,7 +20,7 @@ export default function VoteResults({ results }) {
         }}
       >
         <h3 style={{ margin: 0 }}>투표 결과</h3>
-        <span style={{ color: 'var(--muted)', fontSize: '13px' }}>
+        <span style={{ color: 'var(--muted)', fontSize: '14px' }}>
           총 {totalVotes}명 참여
         </span>
       </div>
@@ -35,19 +36,52 @@ export default function VoteResults({ results }) {
           // 0표일 때는 강조하지 않고, 공동 1위는 모두 강조
           const isTopChoice = maxVotes > 0 && result.count === maxVotes
 
+          // 내가 투표한 선택지인지 확인
+          const isMyChoice =
+            myOptionId != null && result.option_id === myOptionId
+
           return (
-            <div key={result.option_id} style={{ marginBottom: '20px' }}>
+            <div key={result.option_id} style={{ marginBottom: '16px' }}>
               <div
                 style={{
                   display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '12px',
                   marginBottom: '8px',
                 }}
               >
-                <span style={{ overflowWrap: 'anywhere' }}>
-                  {result.label}
-                </span>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '6px',
+                    minWidth: 0,
+                  }}
+                >
+                  <span style={{ overflowWrap: 'anywhere' }}>
+                    {result.label}
+                  </span>
+
+                  {/* 내가 투표한 선택지에만 내 선택 태그 표시 */}
+                  {isMyChoice && (
+                    <span
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '999px',
+                        background: 'var(--border)',
+                        color: 'var(--muted)',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      내 선택
+                    </span>
+                  )}
+                </div>
+
                 <span style={{ whiteSpace: 'nowrap', color: 'var(--muted)' }}>
                   {result.count}표 ({percentage}%)
                 </span>
