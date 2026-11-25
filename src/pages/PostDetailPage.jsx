@@ -308,11 +308,11 @@ export default function PostDetailPage() {
 
   // 참여 상태 아이콘: 마감 상태를 우선하고 기존 참여 문구는 유지
   function getParticipationColor() {
-    if (!status || status.isClosed) return '#716D77'
-    if (status.isAuthor) return '#3968AD'
-    if (status.hasResponded) return '#197C3C'
-    if (status.hasPeeked) return '#936500'
-    return '#716D77'
+    if (!status || status.isClosed) return 'var(--muted)'
+    if (status.isAuthor) return 'var(--info)'
+    if (status.hasResponded) return 'var(--success)'
+    if (status.hasPeeked) return 'var(--warning)'
+    return 'var(--muted)'
   }
 
   function getParticipationIcon() {

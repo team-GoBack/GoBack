@@ -86,7 +86,7 @@ export default function VoteForm({
                 height="18"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#454545"
+                stroke="var(--ink-soft)"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
