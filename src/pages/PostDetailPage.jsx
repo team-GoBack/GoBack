@@ -14,6 +14,7 @@ import VoteResults from '../components/VoteResults.jsx'
 import ResponseList from '../components/ResponseList.jsx'
 import VoteForm from '../components/VoteForm.jsx'
 import VoteTimer from '../components/VoteTimer.jsx'
+import PostActions from '../components/PostActions.jsx'
 
 const detailCardStyle = {
   padding: '24px',
@@ -473,6 +474,14 @@ export default function PostDetailPage() {
             </time>
           </div>
         )}
+
+        <PostActions
+          post={post}
+          status={status}
+          onUpdated={(changes) =>
+            setPost((prev) => ({ ...prev, ...changes }))
+          }
+        />
       </section>
 
       <section style={detailCardStyle}>
