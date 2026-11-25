@@ -56,26 +56,46 @@ export default function VoteForm({
               padding: '14px 16px',
               marginBottom: '10px',
               textAlign: 'left',
-              border: '1px solid var(--border)',
+              border: isSelected
+                ? '1px solid #777777'
+                : '1px solid var(--border)',
               borderRadius: '12px',
               backgroundColor: isSelected
                 ? 'color-mix(in srgb, var(--ink) 4%, var(--card))'
                 : 'var(--card)',
               color: 'var(--ink)',
               font: 'inherit',
-              fontWeight: 400,
+              fontWeight: isSelected ? 500 : 400,
               appearance: 'none',
               boxShadow: 'none',
               backdropFilter: 'blur(12px) saturate(130%)',
               WebkitBackdropFilter: 'blur(12px) saturate(130%)',
               opacity: canSelect ? 1 : 0.6,
               cursor: canSelect ? 'pointer' : 'default',
-              transition: 'background-color 0.2s ease',
+              transition: 'background-color 0.2s ease, border-color 0.2s ease',
             }}
           >
             <span style={{ flex: 1, overflowWrap: 'anywhere' }}>
               {option.label}
             </span>
+
+            {/* 선택한 답변에만 체크 아이콘 표시 */}
+            {isSelected && (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#454545"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                style={{ flexShrink: 0 }}
+              >
+                <path d="m5 12 4 4L19 6" />
+              </svg>
+            )}
           </button>
         )
       })}
@@ -160,6 +180,39 @@ export default function VoteForm({
                 </button>
               )}
           </div>
+
+          {/* 투표 결과 및 댓글 블라인드 안내 */}
+          <p
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              margin: '14px 0 0',
+              color: 'var(--muted)',
+              fontSize: '13px',
+              lineHeight: 1.5,
+            }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              style={{ flexShrink: 0 }}
+            >
+              <rect x="5" y="10" width="14" height="11" rx="2" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+            </svg>
+            <span>
+              투표하거나 궁금해요를 사용하면 결과와 댓글을 볼 수 있어요.
+            </span>
+          </p>
         </form>
       ) : (
         <p style={{ margin: '16px 0 0', color: 'var(--muted)' }}>
