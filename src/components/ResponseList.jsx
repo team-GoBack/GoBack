@@ -134,7 +134,7 @@ export default function ResponseList({ responses, options }) {
 
             <p
               style={{
-                margin: '16px 0 0',
+                margin: '12px 0 0',
                 lineHeight: 1.65,
                 whiteSpace: 'pre-wrap',
                 overflowWrap: 'anywhere',
