@@ -14,6 +14,12 @@
   --accent: #e5484d;
   --accent-soft: #fdecec;
   --shadow: 0 8px 24px rgba(60, 20, 40, 0.07);
+
+  /* 상태 색 (참여 상태 아이콘·배지 등) */
+  --info: #3968ad;     /* 파랑: 내 사연 */
+  --success: #197c3c;  /* 초록: 투표 완료 */
+  --warning: #936500;  /* 노랑: 궁금해요 */
+  --ink-soft: #454545; /* 차콜: 1위 막대처럼 검정보다 살짝 부드러운 강조 */
 }
 
 * { box-sizing: border-box; }
