@@ -12,10 +12,12 @@ export default function WritePage() {
       maxWidth: '640px',
       margin: '0 auto',
       padding: '32px 20px',
-      color: '#222',
-      fontFamily: 'sans-serif',
+      color: 'var(--ink)',
     },
     heading: {
+      marginBottom: '24px',
+    },
+    field: {
       marginBottom: '24px',
     },
     label: {
@@ -27,36 +29,20 @@ export default function WritePage() {
       boxSizing: 'border-box',
       width: '100%',
       padding: '12px',
-      border: '1px solid #ccc',
+      border: '1px solid var(--border)',
       borderRadius: '8px',
       fontSize: '16px',
-    },
-    field: {
-      marginBottom: '24px',
     },
     textarea: {
       boxSizing: 'border-box',
       width: '100%',
       minHeight: '180px',
       padding: '12px',
-      border: '1px solid #ccc',
+      border: '1px solid var(--border)',
       borderRadius: '8px',
       fontSize: '16px',
       resize: 'vertical',
     },
-    tagList: {
-      display: 'flex',
-      gap: '8px',
-    },
-    tagButton: (isSelected) => ({
-      padding: '10px 18px',
-      border: isSelected ? '2px solid #5b5bd6' : '1px solid #ccc',
-      borderRadius: '20px',
-      backgroundColor: isSelected ? '#eeeeff' : '#fff',
-      color: isSelected ? '#3939a8' : '#444',
-      fontSize: '15px',
-      cursor: 'pointer',
-    }),
   }
 
   return (
@@ -92,14 +78,14 @@ export default function WritePage() {
 
       <div style={styles.field}>
         <span style={styles.label}>태그</span>
-        <div style={styles.tagList}>
+        <div className="tags">
           {tags.map((item) => (
             <button
               key={item}
               type="button"
+              className={tag === item ? 'active' : ''}
               aria-pressed={tag === item}
               onClick={() => setTag(item)}
-              style={styles.tagButton(tag === item)}
             >
               {item}
             </button>
