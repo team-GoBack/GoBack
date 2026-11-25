@@ -122,7 +122,7 @@ export default function ResponseList({ responses, options }) {
                 <time
                   dateTime={response.created_at}
                   style={{
-                    fontSize: '12px',
+                    fontSize: '13px',
                     color: 'var(--muted)',
                     whiteSpace: 'nowrap',
                   }}
