@@ -306,6 +306,70 @@ export default function PostDetailPage() {
     return '현재 투표할 수 없습니다.'
   }
 
+  // 참여 상태 아이콘: 마감 상태를 우선하고 기존 참여 문구는 유지
+  function getParticipationColor() {
+    if (!status || status.isClosed) return '#716D77'
+    if (status.isAuthor) return '#3968AD'
+    if (status.hasResponded) return '#197C3C'
+    if (status.hasPeeked) return '#936500'
+    return '#716D77'
+  }
+
+  function getParticipationIcon() {
+    if (!status) return null
+
+    let shape = <circle cx="12" cy="12" r="9" strokeDasharray="2 3.65" />
+
+    if (status.isClosed) {
+      shape = (
+        <>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M8 12h8" />
+        </>
+      )
+    } else if (status.isAuthor) {
+      shape = (
+        <>
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="9" r="3" />
+          <path d="M5.5 18c.8-3 3-4.5 6.5-4.5s5.7 1.5 6.5 4.5" />
+        </>
+      )
+    } else if (status.hasResponded) {
+      shape = (
+        <>
+          <circle cx="12" cy="12" r="9" />
+          <path d="m8 12 2.5 2.5L16 9" />
+        </>
+      )
+    } else if (status.hasPeeked) {
+      shape = (
+        <>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M9.1 9a3 3 0 1 1 5.8 1c-.8 1.5-2.9 1.9-2.9 3.8" />
+          <path d="M12 17h.01" />
+        </>
+      )
+    }
+
+    return (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        style={{ flexShrink: 0 }}
+      >
+        {shape}
+      </svg>
+    )
+  }
+
   // 사연에 참여한 기록과 마감 여부를 함께 표시
   function getParticipationNotice() {
     if (!status) return '참여 상태를 확인할 수 없습니다.'
@@ -337,10 +401,16 @@ export default function PostDetailPage() {
           <span
             style={{
               ...detailTagStyle,
-              borderColor: 'transparent',
-              background: 'color-mix(in srgb, var(--ink) 5%, var(--card))',
+              padding: 0,
+              border: 'none',
+              background: 'transparent',
+              gap: '6px',
+              color: getParticipationColor(),
+              fontSize: '14px',
+              fontWeight: 600,
             }}
           >
+            {getParticipationIcon()}
             {getParticipationNotice()}
           </span>
         </div>
