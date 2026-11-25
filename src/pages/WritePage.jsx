@@ -1,12 +1,19 @@
 import { useState } from 'react'
 
 const tags = ['연애', '입시', '기타']
+const voteTimes = [
+  { hours: 1, label: '1시간' },
+  { hours: 24, label: '1일' },
+  { hours: 168, label: '1주일' },
+]
 
 export default function WritePage() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [tag, setTag] = useState('연애')
   const [options, setOptions] = useState(['', ''])
+  const [voteHours, setVoteHours] = useState(1)
+  const [wantsEpilogue, setWantsEpilogue] = useState(false)
 
   const styles = {
     page: {
@@ -64,6 +71,36 @@ export default function WritePage() {
       cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.5 : 1,
     }),
+    fieldset: {
+      border: 'none',
+      padding: 0,
+      margin: 0,
+    },
+    voteTimeLabel: (isSelected) => ({
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '10px 12px',
+      border: isSelected
+        ? '1px solid var(--primary)'
+        : '1px solid var(--border)',
+      borderRadius: '8px',
+      backgroundColor: 'var(--card)',
+      color: 'var(--ink)',
+      cursor: 'pointer',
+    }),
+    voteTimeList: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+    },
+    epilogueLabel: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      color: 'var(--ink)',
+      cursor: 'pointer',
+    },
   }
 
   function updateOption(index, value) {
@@ -172,6 +209,43 @@ export default function WritePage() {
         >
           선택지 추가
         </button>
+      </div>
+
+      <div style={styles.field}>
+        <fieldset style={styles.fieldset}>
+          <legend style={styles.label}>투표 시간</legend>
+          <div style={styles.voteTimeList}>
+            {voteTimes.map((item) => (
+              <label
+                key={item.hours}
+                htmlFor={`vote-time-${item.hours}`}
+                style={styles.voteTimeLabel(voteHours === item.hours)}
+              >
+                <input
+                  id={`vote-time-${item.hours}`}
+                  type="radio"
+                  name="voteHours"
+                  value={item.hours}
+                  checked={voteHours === item.hours}
+                  onChange={() => setVoteHours(item.hours)}
+                />
+                {item.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </div>
+
+      <div style={styles.field}>
+        <label htmlFor="wants-epilogue" style={styles.epilogueLabel}>
+          <input
+            id="wants-epilogue"
+            type="checkbox"
+            checked={wantsEpilogue}
+            onChange={(event) => setWantsEpilogue(event.target.checked)}
+          />
+          후일담 받기
+        </label>
       </div>
     </main>
   )
