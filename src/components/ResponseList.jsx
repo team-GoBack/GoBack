@@ -1,6 +1,6 @@
-
 // [프론트 팀] 댓글 목록 컴포넌트 (작성자, 선택한 답변, 작성 시각, 댓글 내용)
 // props로 댓글 목록(responses)과 선택지 목록(options)을 받아 화면에 표시
+// bestResponseId를 받아 사연 작성자가 선정한 Best Pick 댓글을 표시
 
 // 댓글 작성 시각만 연도·오전/오후 없이 24시간제로 표시
 function formatCommentDate(value) {
@@ -13,7 +13,7 @@ function formatCommentDate(value) {
   return `${date.getMonth() + 1}월 ${date.getDate()}일 ${hour}:${minute}`
 }
 
-export default function ResponseList({ responses, options }) {
+export default function ResponseList({ responses, options, bestResponseId }) {
   // 선택지 ID로 선택지 이름 찾기
   function getOptionLabel(optionId) {
     return options.find((option) => option.id === optionId)?.label ?? '선택지'
@@ -116,6 +116,39 @@ export default function ResponseList({ responses, options }) {
                 >
                   {getOptionLabel(response.option_id)}
                 </span>
+
+                {/* 미션 6: 사연 작성자가 선정한 Best Pick 댓글 표시 */}
+                {bestResponseId != null && response.id === bestResponseId && (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '4px 8px',
+                      borderRadius: '999px',
+                      background: 'color-mix(in srgb, var(--warning) 10%, var(--card))',
+                      color: 'var(--warning)',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3z" />
+                    </svg>
+                    Best Pick
+                  </span>
+                )}
               </div>
 
               {formatCommentDate(response.created_at) && (
