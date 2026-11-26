@@ -57,7 +57,7 @@ export default function VoteForm({
               marginBottom: '10px',
               textAlign: 'left',
               border: isSelected
-                ? '1px solid #777777'
+                ? '1px solid var(--muted)'
                 : '1px solid var(--border)',
               borderRadius: '12px',
               backgroundColor: isSelected

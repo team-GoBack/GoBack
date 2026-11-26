@@ -1,7 +1,7 @@
  // [프론트 팀] 사연 상세 페이지 (선택지, 투표·댓글, 블라인드, 궁금해요 구현)
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { getPost, getOptions } from '../api/posts.js'
+import { getPost, getOptions, getFinish } from '../api/posts.js'
 import { getCurrentUser, onAuthChange } from '../api/auth.js'
 import {
   getMyStatus,
@@ -15,6 +15,7 @@ import ResponseList from '../components/ResponseList.jsx'
 import VoteForm from '../components/VoteForm.jsx'
 import VoteTimer from '../components/VoteTimer.jsx'
 import PostActions from '../components/PostActions.jsx'
+import PostFinish from '../components/PostFinish.jsx'
 
 const detailCardStyle = {
   padding: '24px',
@@ -76,6 +77,21 @@ export default function PostDetailPage() {
   const [responses, setResponses] = useState([])
   const [isResultsLoading, setIsResultsLoading] = useState(false)
 
+  // 미션 6: 마감 후 사연자의 최종 선택 및 Best Pick 조회 결과
+  const [finishState, setFinishState] = useState(null)
+  const isFinishReady = Boolean(
+    status?.isClosed &&
+    finishState?.postId === id &&
+    finishState?.authUserId === authUserId
+  )
+  const finish = isFinishReady ? finishState.data : null
+
+  // 댓글 조회 실패를 실제 댓글 0개로 오인하지 않도록 결과와 비교
+  const hasCompleteResults =
+    options.length > 0 &&
+    options.every((option) => results.some((result) => result.option_id === option.id)) &&
+    results.reduce((sum, result) => sum + result.count, 0) === responses.length
+
   // 로그인·로그아웃 등 인증 상태 변경 감지
   useEffect(() => {
     const unsubscribe = onAuthChange((user) => {
@@ -132,6 +148,7 @@ export default function PostDetailPage() {
 
     setResults([])
     setResponses([])
+    setFinishState(null)
 
     if (!status?.canSeeResponses) {
       setIsResultsLoading(false)
@@ -145,12 +162,16 @@ export default function PostDetailPage() {
     Promise.all([
       getResults(id),
       getResponses(id),
+      status?.isClosed ? getFinish(id) : Promise.resolve(null),
     ])
-      .then(([resultData, responseData]) => {
+      .then(([resultData, responseData, finishData]) => {
         if (cancelled) return
 
         setResults(resultData)
         setResponses(responseData)
+        if (status?.isClosed) {
+          setFinishState({ postId: id, authUserId, data: finishData })
+        }
       })
       .catch((error) => {
         console.error('투표 결과 및 댓글 불러오기 실패:', error)
@@ -511,6 +532,7 @@ export default function PostDetailPage() {
               <>
                 <VoteResults
                   results={results}
+                  authorOptionId={finish?.chosen_option_id}
                   myOptionId={
                     isLoggedIn && status?.hasResponded
                     ? responses.find((response) => response.is_mine)?.option_id
@@ -518,7 +540,38 @@ export default function PostDetailPage() {
                   }
               />
 
-                <ResponseList responses={responses} options={options} />
+                <ResponseList
+                  responses={responses}
+                  options={options}
+                  bestResponseId={finish?.best_response_id}
+                />
+
+                {/* 미션 6: 마감된 내 사연에서만 한 번 마무리 가능 */}
+                {isLoggedIn && status.isAuthor && status.isClosed && !finish && (
+                  <div
+                    style={{
+                      marginTop: '26px',
+                      paddingTop: '24px',
+                      borderTop: '1px solid var(--border)',
+                    }}
+                  >
+                    {isFinishReady && hasCompleteResults ? (
+                      <PostFinish
+                        key={id}
+                        postId={id}
+                        options={options}
+                        responses={responses}
+                        onFinished={(data) =>
+                          setFinishState({ postId: id, authUserId, data })
+                        }
+                      />
+                    ) : (
+                      <p style={{ color: 'var(--muted)', margin: 0 }}>
+                        마무리 정보를 확인하지 못했습니다. 새로고침 후 다시 시도해 주세요.
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </>
