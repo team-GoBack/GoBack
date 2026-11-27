@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { deletePost, updatePost } from '../api/posts'
+import { closePost, deletePost, updatePost } from '../api/posts'
 
 const tags = ['연애', '입시', '기타']
 
@@ -145,6 +145,34 @@ export default function PostActions({ post, status, onUpdated }) {
         }
     }
 
+    // 지금 바로 마감: 마감되면 결과·댓글이 공개되고 사연자 마무리를 할 수 있음
+    async function handleClose() {
+        if (isSubmitting) return
+
+        const confirmed = window.confirm(
+            '지금 투표를 마감할까요?\n마감하면 결과와 댓글이 모두에게 공개되고, 다시 열 수 없습니다.'
+        )
+        if (!confirmed) return
+
+        setIsSubmitting(true)
+        setMessage('')
+
+        try {
+            const closed = await closePost(post.id)
+
+            if (closed) {
+                // 마감 상태·결과·마무리 화면을 처음부터 다시 불러오기
+                window.location.reload()
+            } else {
+                setMessage('마감에 실패했습니다.')
+                setIsSubmitting(false)
+            }
+        } catch {
+            setMessage('마감에 실패했습니다.')
+            setIsSubmitting(false)
+        }
+    }
+
     function startEditing() {
         setTitle(post.title)
         setContent(post.content)
@@ -244,7 +272,15 @@ export default function PostActions({ post, status, onUpdated }) {
                         disabled={isSubmitting}
                         style={styles.button}
                     >
-                        {isSubmitting ? '삭제 중...' : '삭제'}
+                        {isSubmitting ? '처리 중...' : '삭제'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleClose}
+                        disabled={isSubmitting}
+                        style={{ ...styles.primaryButton, marginLeft: 'auto' }}
+                    >
+                        {isSubmitting ? '처리 중...' : '지금 마감하기'}
                     </button>
                 </div>
             )}

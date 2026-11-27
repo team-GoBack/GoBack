@@ -122,6 +122,21 @@ export async function deletePost(id) {
   return !error && data.length === 1
 }
 
+// 지금 바로 마감 (투표 마감 전, 내 사연만)
+// 넣는 값: id
+// 돌려주는 값: true (성공) / false (실패: 이미 마감됐거나 내 사연이 아님)
+export async function closePost(id) {
+  const now = new Date().toISOString()
+  const { data, error } = await supabase
+    .from('posts')
+    .update({ vote_ends_at: now })
+    .eq('id', id)
+    .gt('vote_ends_at', now) // 아직 마감 전인 사연만
+    .select('id')
+  if (error) console.error('closePost 실패:', error)
+  return !error && data.length === 1
+}
+
 // 선택지 가져오기
 // 넣는 값: postId
 // 돌려주는 값: [{ id, label, order }, ...]  (order 순)

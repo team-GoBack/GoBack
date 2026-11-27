@@ -16,7 +16,7 @@ export default function WritePage() {
   const [content, setContent] = useState('')
   const [tag, setTag] = useState('연애')
   const [options, setOptions] = useState(['', ''])
-  const [voteHours, setVoteHours] = useState(1)
+  const [voteHours, setVoteHours] = useState(24) // 기본 1일
   const [wantsEpilogue, setWantsEpilogue] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isCheckingUser, setIsCheckingUser] = useState(true)
