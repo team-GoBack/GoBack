@@ -1,6 +1,7 @@
 // [프론트 팀] 사연 카드 한 장 (화면 조각)
 // props로 사연 하나(post)를 받아서 카드 모양으로 보여줌
 import { Link } from 'react-router-dom'
+import { formatDateTime } from '../utils/date.js'
 
 // 마감 시각을 받아서 "3시간 남음" 같은 글자로 바꿔주는 함수
 function getRemainingText(endsAt) {
@@ -26,7 +27,6 @@ function getStatus(endsAt) {
   if (diff <= 0) return 'closed'
   if (diff < 1000 * 60 * 60) return 'urgent'
 
-
   return 'open'
 }
 
@@ -39,25 +39,61 @@ export default function PostCard({ post }) {
       className="post-card"
       style={{ opacity: status === 'closed' ? 0.5 : 1 }}
     >
-      <span className="tag">{post.tag}</span>
-      {status === 'urgent' && (
-        <span
+      {/* 카테고리 및 작성일자 */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '6px 8px',
+        }}
+      >
+        <div
           style={{
-            marginLeft: 8,
-            padding: '2px 8px',
-            borderRadius: 999,
-            backgroundColor: '#ff4d4f',
-            color: '#fff',
-            fontSize: 12,
-            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
           }}
         >
-          마감 임박
-        </span>
-      )}
+          <span className="tag">{post.tag}</span>
+          {status === 'urgent' && (
+            <span
+              style={{
+                marginLeft: 8,
+                padding: '2px 8px',
+                borderRadius: 999,
+                backgroundColor: '#ff4d4f',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 'bold',
+              }}
+            >
+              마감 임박
+            </span>
+          )}
+        </div>
+
+        {post.created_at && (
+          <time
+            dateTime={post.created_at}
+            style={{
+              color: 'var(--muted)',
+              fontSize: '13px',
+              marginLeft: 'auto',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {formatDateTime(post.created_at)}
+          </time>
+        )}
+      </div>
+
       <h3>{post.title}</h3>
       <p>{post.content}</p>
-      <small>투표 {post.response_count}명 · {getRemainingText(post.vote_ends_at)}</small>
+      <small>
+        투표 {post.response_count}명 · {getRemainingText(post.vote_ends_at)}
+      </small>
     </Link>
   )
 }
