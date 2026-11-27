@@ -18,11 +18,12 @@ async function getCounts() {
 
 // 사연 목록 가져오기
 // 넣는 값: tag (없으면 전체)
-// 돌려주는 값: [{ id, title, content, tag, vote_ends_at, response_count }, ...]  (최신순)
+// 돌려주는 값: [{ id, title, content, tag, vote_ends_at, created_at, response_count }, ...]  (최신순)
+//   - created_at: 사연 작성 시각 (화면 표시는 utils/date.js의 formatDateTime 사용)
 export async function getPosts(tag) {
   let query = supabase
     .from('posts')
-    .select('id, title, content, tag, vote_ends_at')
+    .select('id, title, content, tag, vote_ends_at, created_at')
     .order('created_at', { ascending: false })
 
   if (tag) query = query.eq('tag', tag)
@@ -37,11 +38,11 @@ export async function getPosts(tag) {
 
 // 사연 하나 가져오기
 // 넣는 값: id
-// 돌려주는 값: { id, title, content, tag, vote_ends_at, wants_epilogue, response_count } 또는 null
+// 돌려주는 값: { id, title, content, tag, vote_ends_at, created_at, wants_epilogue, response_count } 또는 null
 //   - wants_epilogue: 사연자가 후일담을 약속했는지 (true/false)
 export async function getPost(id) {
   const [{ data, error }, counts] = await Promise.all([
-    supabase.from('posts').select('id, title, content, tag, vote_ends_at, wants_epilogue').eq('id', id).maybeSingle(),
+    supabase.from('posts').select('id, title, content, tag, vote_ends_at, created_at, wants_epilogue').eq('id', id).maybeSingle(),
     getCounts(),
   ])
   if (error || !data) {
