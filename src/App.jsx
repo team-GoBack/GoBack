@@ -6,6 +6,7 @@ import PostDetailPage from './pages/PostDetailPage.jsx'
 import WritePage from './pages/WritePage.jsx'
 import ReelsPage from './pages/ReelsPage.jsx'
 import LoginButton from './components/LoginButton.jsx'
+import EpilogueBanner from './components/EpilogueBanner.jsx'
 
 export default function App() {
   return (
@@ -25,6 +26,9 @@ export default function App() {
           <Link to="/write" className="write-btn">사연 쓰기</Link>
         </div>
       </header>
+
+      {/* 내가 투표한 사연에 새 후일담이 올라오면 알림 */}
+      <EpilogueBanner />
 
       <Routes>
         <Route path="/" element={<MainPage />} />
