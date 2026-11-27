@@ -1,6 +1,7 @@
  // [프론트 팀] 사연 상세 페이지 (선택지, 투표·댓글, 블라인드, 궁금해요 구현)
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { formatDateTime } from '../utils/date.js'
 import { getPost, getOptions, getFinish } from '../api/posts.js'
 import { getCurrentUser, onAuthChange } from '../api/auth.js'
 import {
@@ -43,18 +44,6 @@ const detailTagStyle = {
   fontWeight: 500,
   lineHeight: 1.2,
   whiteSpace: 'nowrap',
-}
-
-function formatDate(value) {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleString('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 export default function PostDetailPage() {
@@ -417,10 +406,30 @@ export default function PostDetailPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '12px',
+            flexWrap: 'wrap',
+            gap: '8px 12px',
           }}
         >
-          <span className="tag" style={detailTagStyle}>{post.tag}</span>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '6px 10px',
+              minWidth: 0,
+            }}
+          >
+            <span className="tag" style={detailTagStyle}>{post.tag}</span>
+            {/* 미션 7: 사연 작성 시각 표시 */}
+            {post.created_at && (
+              <time
+                dateTime={post.created_at}
+                style={{ color: 'var(--muted)', fontSize: '13px' }}
+              >
+                {formatDateTime(post.created_at)} 작성
+              </time>
+            )}
+          </div>
           <span
             style={{
               ...detailTagStyle,
@@ -431,18 +440,29 @@ export default function PostDetailPage() {
               color: getParticipationColor(),
               fontSize: '14px',
               fontWeight: 600,
+              marginLeft: 'auto',
             }}
           >
             {getParticipationIcon()}
             {getParticipationNotice()}
           </span>
         </div>
-        <h2 style={{ margin: '14px 0 12px', lineHeight: 1.45 }}>{post.title}</h2>
+        <h2
+          style={{
+            margin: '14px 0 12px',
+            lineHeight: 1.45,
+            wordBreak: 'keep-all',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {post.title}
+        </h2>
         <p
           style={{
             margin: '22px 0',
             lineHeight: 1.85,
             whiteSpace: 'pre-wrap',
+            wordBreak: 'keep-all',
             overflowWrap: 'anywhere',
             color: 'var(--ink)',
           }}
@@ -492,7 +512,7 @@ export default function PostDetailPage() {
               dateTime={post.vote_ends_at}
               style={{ color: 'var(--muted)', fontSize: '13px' }}
             >
-              {formatDate(post.vote_ends_at)} 마감
+              {formatDateTime(post.vote_ends_at)} 마감
             </time>
           </div>
         )}
