@@ -37,10 +37,11 @@ export async function getPosts(tag) {
 
 // 사연 하나 가져오기
 // 넣는 값: id
-// 돌려주는 값: { id, title, content, tag, vote_ends_at, response_count } 또는 null
+// 돌려주는 값: { id, title, content, tag, vote_ends_at, wants_epilogue, response_count } 또는 null
+//   - wants_epilogue: 사연자가 후일담을 약속했는지 (true/false)
 export async function getPost(id) {
   const [{ data, error }, counts] = await Promise.all([
-    supabase.from('posts').select('id, title, content, tag, vote_ends_at').eq('id', id).maybeSingle(),
+    supabase.from('posts').select('id, title, content, tag, vote_ends_at, wants_epilogue').eq('id', id).maybeSingle(),
     getCounts(),
   ])
   if (error || !data) {

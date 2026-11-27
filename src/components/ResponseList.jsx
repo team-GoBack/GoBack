@@ -14,6 +14,16 @@ function formatCommentDate(value) {
 }
 
 export default function ResponseList({ responses, options, bestResponseId }) {
+  // 익명 번호는 원래 순서(오래된 순)로 먼저 매기고, Best Pick 댓글만 맨 위로 올림
+  // → 위치가 바뀌어도 "익명3"은 계속 같은 사람
+  const numbered = responses.map((response, index) => ({ response, number: index + 1 }))
+  const ordered = bestResponseId == null
+    ? numbered
+    : [
+        ...numbered.filter(({ response }) => response.id === bestResponseId),
+        ...numbered.filter(({ response }) => response.id !== bestResponseId),
+      ]
+
   // 선택지 ID로 선택지 이름 찾기
   function getOptionLabel(optionId) {
     return options.find((option) => option.id === optionId)?.label ?? '선택지'
@@ -28,7 +38,7 @@ export default function ResponseList({ responses, options, bestResponseId }) {
           아직 작성된 댓글이 없습니다.
         </p>
       ) : (
-        responses.map((response, index) => (
+        ordered.map(({ response, number }, index) => (
           <article
             key={response.id}
             style={{
@@ -97,7 +107,7 @@ export default function ResponseList({ responses, options, bestResponseId }) {
 
                 {/* 한 사연에 한 사람당 댓글 1개 + 오래된 순 → 순서 번호 = 사람 번호 */}
                 <strong style={{ fontSize: '16px' }}>
-                  익명{index + 1}{response.is_mine ? ' (나)' : ''}
+                  익명{number}{response.is_mine ? ' (나)' : ''}
                 </strong>
 
                 {/* 선택한 답변을 은은한 태그로 표시 */}

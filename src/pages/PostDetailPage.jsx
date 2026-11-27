@@ -15,6 +15,7 @@ import ResponseList from '../components/ResponseList.jsx'
 import VoteForm from '../components/VoteForm.jsx'
 import VoteTimer from '../components/VoteTimer.jsx'
 import PostActions from '../components/PostActions.jsx'
+import EpilogueSection from '../components/EpilogueSection.jsx'
 import PostFinish from '../components/PostFinish.jsx'
 
 const detailCardStyle = {
@@ -583,6 +584,9 @@ export default function PostDetailPage() {
           </p>
         )}
       </section>
+
+      {/* 후일담: 마감 전엔 약속 안내, 마감 후엔 타임라인 + 사연자 쓰기 */}
+      <EpilogueSection post={post} status={status} />
     </main>
   )
 }
