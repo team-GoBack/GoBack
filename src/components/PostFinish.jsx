@@ -174,7 +174,7 @@ export default function PostFinish({
             작성된 댓글이 없어 Best Pick을 선택할 수 없습니다.
           </p>
         ) : (
-          responses.map((response) => {
+          responses.map((response, index) => {
             const isSelected = bestResponseId === response.id
 
             return (
@@ -199,7 +199,8 @@ export default function PostFinish({
                       marginBottom: '10px',
                     }}
                   >
-                    <strong>익명</strong>
+                    {/* 댓글 목록과 같은 번호 (같은 responses 배열, 같은 순서) */}
+                    <strong>익명{index + 1}</strong>
 
                     <span
                       style={{

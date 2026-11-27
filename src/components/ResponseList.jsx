@@ -95,8 +95,9 @@ export default function ResponseList({ responses, options, bestResponseId }) {
                   </svg>
                 </span>
 
+                {/* 한 사연에 한 사람당 댓글 1개 + 오래된 순 → 순서 번호 = 사람 번호 */}
                 <strong style={{ fontSize: '16px' }}>
-                  {response.is_mine ? '나' : '익명'}
+                  익명{index + 1}{response.is_mine ? ' (나)' : ''}
                 </strong>
 
                 {/* 선택한 답변을 은은한 태그로 표시 */}
