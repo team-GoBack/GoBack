@@ -18,6 +18,7 @@ import VoteTimer from '../components/VoteTimer.jsx'
 import PostActions from '../components/PostActions.jsx'
 import EpilogueSection from '../components/EpilogueSection.jsx'
 import PostFinish from '../components/PostFinish.jsx'
+import RecommendButton from '../components/RecommendButton.jsx'
 
 const detailCardStyle = {
   padding: '24px',
@@ -469,6 +470,7 @@ export default function PostDetailPage() {
         >
           {post.content}
         </p>
+        <RecommendButton key={id} postId={id} />
         {post.vote_ends_at && (
           <div
             style={{
