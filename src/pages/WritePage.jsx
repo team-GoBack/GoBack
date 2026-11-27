@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCurrentUser } from '../api/auth'
 import { createPost } from '../api/posts'
+import HaedalEasterEgg from '../components/HaedalEasterEgg.jsx'
 
 const tags = ['연애', '입시', '기타']
 const voteTimes = [
@@ -47,6 +48,7 @@ export default function WritePage() {
   const [isCheckingUser, setIsCheckingUser] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState('')
+  const [showHaedal, setShowHaedal] = useState(false) // 🌅 이스터에그 연출 중인지
 
   useEffect(() => {
     let isActive = true
@@ -303,6 +305,19 @@ export default function WritePage() {
   async function handleSubmit(event) {
     event.preventDefault()
 
+    // 🌅 이스터에그: 제목·내용·선택지가 전부 "해달"이면 저장하지 않고 노을 연출 → 해달 사이트
+    const isHaedal = (text) => text.trim() === '해달'
+    const filledForEgg = options.filter((option) => option.trim())
+    if (
+      isHaedal(title) &&
+      isHaedal(content) &&
+      filledForEgg.length >= 2 &&
+      filledForEgg.every(isHaedal)
+    ) {
+      setShowHaedal(true)
+      return
+    }
+
     if (isSubmitting) {
       return
     }
@@ -362,6 +377,7 @@ export default function WritePage() {
 
   return (
     <main style={styles.page}>
+      {showHaedal && <HaedalEasterEgg />}
       <h2 style={styles.heading}>사연 쓰기</h2>
 
       <form onSubmit={handleSubmit}>
