@@ -46,7 +46,7 @@ export default function AiAnswerCard({ postId, responseCount, isAuthor }) {
   if (answer) {
     return (
       <section style={boxStyle} aria-label="AI의 한마디">
-        <strong style={{ display: 'block', marginBottom: '8px', color: 'var(--info)', fontSize: '15px' }}>🤖 AI의 한마디</strong>
+        <strong style={{ display: 'block', marginBottom: '8px', color: 'var(--info)', fontSize: '15px' }}>AI의 한마디</strong>
         <p style={{ margin: 0, lineHeight: 1.7, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', color: 'var(--ink)' }}>{answer}</p>
         <p style={{ margin: '10px 0 0', fontSize: '12px', color: 'var(--muted)' }}>
           AI가 쓴 참고 의견이에요. 실제 경험담은 투표 댓글에서 확인해 주세요.
