@@ -254,6 +254,16 @@ main:has(> .post-card) > .post-card p {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* 제목도 길면 …으로 자르기 (작은 칸 2줄, 큰 칸 3줄). 띄어쓰기 없는 긴 글자도 칸 안에서 줄바꿈 */
+main:has(> .post-card) > .post-card h3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+main:has(> .post-card) > .post-card p { overflow-wrap: anywhere; }
+main:has(> .post-card) > .post-card:first-of-type h3 { -webkit-line-clamp: 3; }
 main:has(> .post-card) > .post-card small { position: absolute; left: 22px; bottom: 18px; }
 
 /* 첫 번째 카드 = 큰 칸 (투표 많은 순이면 참여 1위, 최신순이면 최신 사연) */
