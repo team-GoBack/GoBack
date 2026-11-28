@@ -1,7 +1,9 @@
 // [프론트 팀] 메인 페이지: 사연 목록
 // 흐름: 화면이 열림 → getPosts()로 주문 → 처음 열 때만 "불러오는 중..." → 받은 사연을 정렬해서 카드로 그림
 import { useEffect, useState } from 'react'
-import { getPosts } from '../api/posts.js'
+import { getPosts, getMyVotedPosts } from '../api/posts.js'
+import { getCurrentUser, onAuthChange } from '../api/auth.js'
+import { getRecommendCounts } from '../api/recommends.js'
 import PostCard from '../components/PostCard.jsx'
 
 const TAGS = ['전체', '연애', '입시', '기타']
@@ -9,6 +11,18 @@ const SORTS = [
   { key: 'latest', label: '최신순' },
   { key: 'popular', label: '투표 많은 순' },
 ]
+
+// 두 페이지에서 같은 모양으로 사용하는 검색창 (공통 CSS 파일은 수정하지 않음)
+const searchBoxStyle = {
+  display: 'flex', alignItems: 'center', gap: 10, minWidth: 0,
+  height: 44, padding: '0 14px', border: '1px solid color-mix(in srgb, var(--ink) 18%, transparent)', // 흰 배경 위에서 보이게 조금 진하게
+  borderRadius: 999, background: 'var(--card)', color: 'var(--muted)',
+}
+const searchInputStyle = {
+  flex: 1, width: '100%', minWidth: 0, height: '100%', padding: 0,
+  border: 'none', background: 'transparent', color: 'var(--ink)',
+  font: 'inherit', fontSize: 14, borderRadius: 999,
+}
 
 // HOT 사연이 되기 위한 최소 투표 수
 const HOT_MIN = 3
@@ -41,6 +55,85 @@ export default function MainPage() {
   const [hasLoaded, setHasLoaded] = useState(false) // 처음 한 번이라도 받아왔는지 기억하는 곳
   const [tag, setTag] = useState('전체')      // 지금 고른 카테고리
   const [sort, setSort] = useState('latest') // 지금 고른 정렬 방식
+  const [tagsOpen, setTagsOpen] = useState(false) // 카테고리 펼침 (접혀 있으면 고른 것 하나만 보임)
+
+  const [search, setSearch] = useState('')
+  const [ongoingOnly, setOngoingOnly] = useState(true) // 기본: 진행 중인 사연만 (체크박스 "마감된 사연 포함"을 켜면 전부)
+  const [recommendCounts, setRecommendCounts] = useState(null)
+  const [userId, setUserId] = useState(null)
+  const [myVotes, setMyVotes] = useState(null)
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 760px)').matches)
+
+  // 전체 사연의 추천 수를 한 번에 가져옴
+  useEffect(() => {
+    let ignore = false
+
+    getRecommendCounts()
+      .then((counts) => {
+        if (!ignore) setRecommendCounts(counts)
+      })
+      .catch((error) => {
+        console.error('추천 수 조회 실패:', error)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  // 로그인 상태 확인 및 로그인·로그아웃 감지
+  useEffect(() => {
+    let active = true
+    let authChanged = false
+    const unsubscribe = onAuthChange((user) => {
+      if (!active) return
+      authChanged = true
+      setUserId(user?.id ?? null)
+    })
+
+    getCurrentUser()
+      .then((user) => {
+        if (active && !authChanged) setUserId(user?.id ?? null)
+      })
+      .catch((error) => {
+        console.error('로그인 상태 확인 실패:', error)
+      })
+
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
+
+  // 로그인한 계정의 투표 기록만 한 번에 조회 (카드마다 호출하지 않음)
+  useEffect(() => {
+    let ignore = false
+    setMyVotes(null)
+    if (!userId) return
+
+    getMyVotedPosts()
+      .then((result) => {
+        if (!ignore) {
+          setMyVotes({ userId, ids: new Set((result ?? []).map((post) => post.id)) })
+        }
+      })
+      .catch((error) => {
+        console.error('내 투표 기록 조회 실패:', error)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [userId])
+
+  // 좁은 화면에서는 검색창을 캐치프레이즈 아래로 내림
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 760px)')
+    const update = () => setNarrow(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
 
   // tag가 바뀔 때마다 주문 창구에 다시 주문
   useEffect(() => {
@@ -66,23 +159,43 @@ export default function MainPage() {
     }
   }, [tag])
 
+  // 1. 제목 또는 내용 검색 (공백 제거, 대소문자 무시)
+  const keyword = search.trim().toLowerCase()
+  const searchedPosts = keyword
+    ? posts.filter((post) => (post.title ?? '').toLowerCase().includes(keyword) || (post.content ?? '').toLowerCase().includes(keyword))
+    : posts
+
+  // 2. 진행 중인 사연만 보기
+  const filteredPosts = ongoingOnly
+    ? searchedPosts.filter((post) => new Date(post.vote_ends_at) > new Date())
+    : searchedPosts
+
   // 투표 많은 순: 복사본을 response_count 기준으로 정렬 (원본 posts는 그대로 둠)
   // 최신순: API가 준 순서 그대로 보여 줌
   const sortedPosts =
     sort === 'popular'
-      ? [...posts].sort((a, b) => (b.response_count || 0) - (a.response_count || 0))
-      : posts
+      ? [...filteredPosts].sort((a, b) => (b.response_count || 0) - (a.response_count || 0))
+      : filteredPosts
 
   // 정렬이 끝난 목록에서 가장 HOT한 사연을 맨 앞(큰 칸)으로
   // (나중에 검색·토글이 생겨도 "거르기 → 정렬 → HOT 맨 앞" 순서가 되도록 화면에 그리기 직전에 둠)
   const displayPosts = moveHotFirst(sortedPosts)
 
   return (
-    <main>
+    <main style={{ maxWidth: 'none' }}>
       {/* 캐치프레이즈: 고백(告白) + Go back(되돌리다) */}
-      <section className="hero">
-        <h1>당신의 사연을 <em>고백</em>해주세요.</h1>
-        <p>후회를 되돌려 드립니다.</p>
+      <section className="hero" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ flex: '1 1 360px', minWidth: 0 }}>
+          <h1>당신의 사연을 <em>고백</em>해주세요.</h1>
+          <p>후회를 되돌려 드립니다.</p>
+        </div>
+        <label style={{ ...searchBoxStyle, flex: narrow ? '1 1 100%' : '0 1 320px', width: narrow ? '100%' : 320, maxWidth: '100%' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <circle cx="11" cy="11" r="7" />
+            <path d="m16 16 4 4" />
+          </svg>
+          <input type="search" aria-label="제목이나 내용으로 검색" placeholder="제목이나 내용으로 검색" value={search} onChange={(e) => setSearch(e.target.value)} style={searchInputStyle} />
+        </label>
       </section>
 
       {/* 카테고리 왼쪽, 정렬 버튼 오른쪽 배치 */}
@@ -96,31 +209,105 @@ export default function MainPage() {
           marginBottom: '6px',
         }}
       >
+        {/* 카테고리: 접혀 있으면 고른 것 하나만 (누르면 펼침), 펼치면 전부 (고르면 다시 접힘) */}
         <div className="tags" style={{ marginBottom: 0 }}>
-          {TAGS.map((t) => (
-            <button key={t} onClick={() => setTag(t)} className={t === tag ? 'active' : ''}>
-              {t}
+          {tagsOpen ? (
+            TAGS.map((t) => (
+              <button
+                key={t}
+                onClick={() => {
+                  setTag(t)
+                  setTagsOpen(false)
+                }}
+                className={t === tag ? 'active' : ''}
+              >
+                {t}
+              </button>
+            ))
+          ) : (
+            <button className="active" onClick={() => setTagsOpen(true)} aria-expanded={false} aria-label={`카테고리: ${tag} (눌러서 바꾸기)`}>
+              {tag} ›
             </button>
-          ))}
+          )}
         </div>
 
-        <div className="tags" style={{ marginBottom: 0 }}>
-          {SORTS.map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setSort(s.key)}
-              className={s.key === sort ? 'active' : ''}
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          {/* 마감된 사연 포함 토글 (정렬 버튼 왼쪽). 작성 페이지 후일담 스위치와 같은 모양 */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={!ongoingOnly}
+            onClick={() => setOngoingOnly(!ongoingOnly)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              margin: '0 4px 0 0',
+              padding: 0,
+              border: 'none',
+              background: 'transparent',
+              font: 'inherit',
+              fontSize: 14,
+              color: 'var(--muted)',
+              cursor: 'pointer',
+            }}
+          >
+            마감된 사연 포함
+            <span
+              aria-hidden="true"
+              style={{
+                position: 'relative',
+                width: 36,
+                height: 20,
+                borderRadius: 999,
+                flexShrink: 0,
+                backgroundColor: ongoingOnly ? 'color-mix(in srgb, var(--muted) 30%, var(--card))' : 'var(--primary)',
+                transition: 'background-color 0.2s ease',
+              }}
             >
-              {s.label}
-            </button>
-          ))}
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  left: ongoingOnly ? 2 : 18,
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--on-primary)',
+                  boxShadow: 'var(--shadow)',
+                  transition: 'left 0.2s ease',
+                }}
+              />
+            </span>
+          </button>
+
+          <div className="tags" style={{ marginBottom: 0 }}>
+            {SORTS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setSort(s.key)}
+                className={s.key === sort ? 'active' : ''}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {loading && !hasLoaded && <p>불러오는 중...</p>}
-      {!loading && displayPosts.length === 0 && <p>사연이 없어요.</p>}
+      {!loading && displayPosts.length === 0 && <p>{keyword ? '검색 결과가 없어요' : ongoingOnly ? '진행 중인 사연이 없어요' : '사연이 없어요.'}</p>}
       {displayPosts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard
+          key={post.id}
+          post={post}
+          hasVoted={Boolean(userId && myVotes?.userId === userId && myVotes.ids.has(post.id))}
+          recommendCount={
+            recommendCounts === null
+              ? null
+              : (recommendCounts[post.id] ?? 0)
+          }
+        />
       ))}
     </main>
   )

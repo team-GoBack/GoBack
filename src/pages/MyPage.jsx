@@ -65,6 +65,18 @@ function writeHidden(userId, tab, ids) {
   }
 }
 
+// 두 페이지에서 같은 모양으로 사용하는 검색창 (공통 CSS 파일은 수정하지 않음)
+const searchBoxStyle = {
+  display: 'flex', alignItems: 'center', gap: 10, minWidth: 0,
+  height: 44, padding: '0 14px', border: '1px solid color-mix(in srgb, var(--ink) 18%, transparent)', // 흰 배경 위에서 보이게 조금 진하게
+  borderRadius: 999, background: 'var(--card)', color: 'var(--muted)',
+}
+const searchInputStyle = {
+  flex: 1, width: '100%', minWidth: 0, height: '100%', padding: 0,
+  border: 'none', background: 'transparent', color: 'var(--ink)',
+  font: 'inherit', fontSize: 14, borderRadius: 999,
+}
+
 const smallButtonStyle = {
   font: 'inherit', fontSize: 13, color: 'var(--muted)',
   background: 'var(--card)', border: '1px solid var(--border)',
@@ -161,6 +173,7 @@ function MyPostItem({ post, tab, now, hidden, onToggleHidden }) {
 
 export default function MyPage() {
   const [tab, setTab] = useState('mine')
+  const [search, setSearch] = useState('')
   // undefined: 로그인 확인 중, null: 로그아웃, 문자열: 로그인한 사용자 ID
   const [userId, setUserId] = useState(undefined)
   const [authError, setAuthError] = useState(false)
@@ -183,6 +196,7 @@ export default function MyPage() {
   // 로그인 계정이 바뀌면 해당 계정의 숨김 기록만 읽음
   useEffect(() => {
     setShowHidden(false)
+    setSearch('')
     setStorageError(false)
     setHiddenActivity(userId ? {
       userId,
@@ -254,10 +268,15 @@ export default function MyPage() {
     .filter((post) => !(currentHidden?.[value] ?? []).includes(post.id)).length
   const ready = Boolean(currentActivity && currentHidden && !currentActivity.error)
   const selectedPosts = showHidden ? hiddenPosts : visiblePosts
+  // 숨김 여부로 거른 목록에서 제목 또는 내용을 검색 (탭의 개수에는 영향 없음)
+  const keyword = search.trim().toLowerCase()
+  const searchedPosts = keyword
+    ? selectedPosts.filter((post) => (post.title ?? '').toLowerCase().includes(keyword) || (post.content ?? '').toLowerCase().includes(keyword))
+    : selectedPosts
   // 마무리 필요 사연을 먼저 표시하고 나머지 순서는 유지 (원본 배열 변경 금지)
   const displayedPosts = tab === 'mine'
-    ? [...selectedPosts.filter((post) => needsFinish(post, now)), ...selectedPosts.filter((post) => !needsFinish(post, now))]
-    : selectedPosts
+    ? [...searchedPosts.filter((post) => needsFinish(post, now)), ...searchedPosts.filter((post) => !needsFinish(post, now))]
+    : searchedPosts
   const messageStyle = { color: 'var(--muted)', textAlign: 'center', padding: '28px 12px' }
 
   function toggleHidden(postId) {
@@ -270,13 +289,18 @@ export default function MyPage() {
   }
 
   function changeTab(value) {
+    if (value !== tab) setSearch('')
     setTab(value)
     setShowHidden(false)
   }
 
   return (
     <main style={{ maxWidth: 960, margin: '0 auto' }}>
-      <h2>내 활동</h2>
+      {/* 메인 캐치프레이즈와 같은 모양의 제목 */}
+      <section className="hero">
+        <h1>나의 <em>고백</em>과 선택</h1>
+        <p>내가 쓴 사연과 투표한 사연을 한곳에서 확인해요.</p>
+      </section>
 
       {authError ? (
         <p style={messageStyle}>로그인 상태를 확인하지 못했어요. 새로고침해 주세요.</p>
@@ -295,11 +319,21 @@ export default function MyPage() {
                 내가 투표한 사연{ready ? ` ${countVisible('voted')}` : ''}
               </button>
             </div>
-            {ready && (showHidden || hiddenPosts.length > 0) && (
-              <button type="button" aria-pressed={showHidden} onClick={() => setShowHidden(!showHidden)} style={{ ...smallButtonStyle, marginLeft: 'auto' }}>
-                {showHidden ? '← 전체 사연 보기' : `숨긴 사연 ${hiddenPosts.length}개 보기`}
-              </button>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginLeft: 'auto' }}>
+              {ready && (showHidden || hiddenPosts.length > 0) && (
+                <button type="button" aria-pressed={showHidden} onClick={() => setShowHidden(!showHidden)} style={smallButtonStyle}>
+                  {showHidden ? '← 전체 사연 보기' : `숨긴 사연 ${hiddenPosts.length}개 보기`}
+                </button>
+              )}
+              {/* 검색창: 탭 줄 오른쪽에 짧게 */}
+              <label style={{ ...searchBoxStyle, width: 260, maxWidth: '100%' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m16 16 4 4" />
+                </svg>
+                <input type="search" aria-label="제목이나 내용으로 검색" placeholder="제목·내용 검색" value={search} onChange={(e) => setSearch(e.target.value)} style={searchInputStyle} />
+              </label>
+            </div>
           </div>
 
           {!currentActivity || !currentHidden ? (
@@ -315,7 +349,7 @@ export default function MyPage() {
               )}
               {displayedPosts.length === 0 ? (
                 <p style={messageStyle}>
-                  {showHidden ? '숨긴 사연이 없어요' : posts.length > 0 ? '표시할 사연이 없어요' : tab === 'mine' ? '아직 쓴 사연이 없어요' : '아직 투표한 사연이 없어요'}
+                  {keyword ? '검색 결과가 없어요' : showHidden ? '숨긴 사연이 없어요' : posts.length > 0 ? '표시할 사연이 없어요' : tab === 'mine' ? '아직 쓴 사연이 없어요' : '아직 투표한 사연이 없어요'}
                 </p>
               ) : (
                 // main 바로 아래에 post-card를 두면 메인 페이지 벤토 그리드가 적용됨
