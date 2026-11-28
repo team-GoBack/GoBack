@@ -136,6 +136,12 @@ main:not(:has(> .post-card)) { max-width: 680px; margin: 0 auto; }
 .epilogue-banner-icon { font-size: 18px; flex-shrink: 0; }
 .epilogue-banner-text { flex: 1; min-width: 0; margin: 0; font-size: 15px; color: var(--ink); overflow-wrap: anywhere; }
 .epilogue-banner-extra { color: var(--muted); }
+.epilogue-banner-wrap { max-width: 960px; margin: 8px auto 4px; }
+.epilogue-banner-wrap > .epilogue-banner { margin: 0; }
+.epilogue-banner-more { margin-left: 6px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.epilogue-banner-list { list-style: none; margin: 6px 0 0; padding: 6px; border: 1px solid var(--card-border); border-radius: 14px; background: var(--card); -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); box-shadow: var(--shadow); }
+.epilogue-banner-list button { display: flex; gap: 10px; width: 100%; padding: 10px 12px; border: none; border-radius: 10px; background: transparent; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.epilogue-banner-list button:hover { background: var(--accent-soft); }
 .epilogue-banner-open {
   flex-shrink: 0;
   min-height: 36px;
