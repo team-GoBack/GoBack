@@ -62,7 +62,8 @@ main:not(:has(> .post-card)) { max-width: 680px; margin: 0 auto; }
   backdrop-filter: blur(16px) saturate(140%);
   border-bottom: 1px solid var(--border);
 }
-.logo { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.logo { display: inline-flex; align-items: center; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.logo-icon { width: 30px; height: 30px; margin-right: 8px; flex-shrink: 0; } /* gap을 쓰면 뒤의 빨간 점(.)까지 벌어져서 margin으로 */
 /* 로고만 본문 왼쪽 끝선에 맞춤 (헤더 안쪽 폭 기준으로 본문 1200px의 시작점). 화면이 좁으면 0 */
 .header > .logo { margin-left: max(0px, calc((100% - 1200px) / 2 - 75px)); }
 .logo::after { content: '.'; color: var(--accent); }

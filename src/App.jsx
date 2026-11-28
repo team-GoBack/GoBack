@@ -16,7 +16,10 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <Link to="/" className="logo">GoBack</Link>
+        <Link to="/" className="logo">
+          <img src="/favicon.svg" alt="" className="logo-icon" />
+          GoBack
+        </Link>
         <div className="header-actions">
           <NavLink to="/reels" className={navClass} aria-label="릴스: 사연 넘겨 보기">
             {/* 세로 화면 안에 재생 버튼 모양 아이콘 */}
