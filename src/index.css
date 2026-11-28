@@ -139,10 +139,11 @@ main:not(:has(> .post-card)) { max-width: 680px; margin: 0 auto; }
 .epilogue-banner-icon { font-size: 18px; flex-shrink: 0; }
 .epilogue-banner-text { flex: 1; min-width: 0; margin: 0; font-size: 15px; color: var(--ink); overflow-wrap: anywhere; }
 .epilogue-banner-extra { color: var(--muted); }
-.epilogue-banner-wrap { max-width: 960px; margin: 8px auto 4px; }
+/* 알림은 페이지를 밀어내지 않고 헤더 바로 아래에 떠서 내용 위를 덮음 */
+.epilogue-banner-wrap { position: fixed; top: 92px; left: 50%; z-index: 9; width: min(960px, calc(100vw - 32px)); margin: 0; transform: translateX(-50%); }
 .epilogue-banner-wrap > .epilogue-banner { margin: 0; }
 .epilogue-banner-more { margin-left: 6px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
-.epilogue-banner-list { list-style: none; margin: 6px 0 0; padding: 6px; border: 1px solid var(--card-border); border-radius: 14px; background: var(--card); -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); box-shadow: var(--shadow); }
+.epilogue-banner-list { max-height: 50vh; overflow-y: auto; list-style: none; margin: 6px 0 0; padding: 6px; border: 1px solid var(--card-border); border-radius: 14px; background: var(--card); -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); box-shadow: var(--shadow); }
 .epilogue-banner-list li { display: flex; align-items: center; border-radius: 10px; }
 .epilogue-banner-list li:hover { background: var(--accent-soft); }
 .epilogue-banner-item { display: flex; flex: 1; min-width: 0; gap: 10px; padding: 10px 12px; border: none; background: transparent; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
@@ -297,6 +298,7 @@ main:has(> .post-card) > .post-card:first-of-type small { left: 32px; bottom: 24
   .hero h1 { font-size: 24px; }
   .hero p { font-size: 15px; }
   .header { padding: 14px 16px; }
+  .epilogue-banner-wrap { top: 80px; }
   .header-actions { gap: 4px; }
   .reels-link span, .google-btn span { display: none; } /* 폰에선 아이콘만 */
   .google-btn { padding: 10px 12px; }
