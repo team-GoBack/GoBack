@@ -7,6 +7,10 @@ import { useNavigate } from 'react-router-dom'
 import { getPosts, getOptions } from '../api/posts.js'
 import { getCurrentUser, onAuthChange } from '../api/auth.js'
 import { getMyStatus, respond } from '../api/responses.js'
+import { formatDateTime } from '../utils/date.js'
+
+// 선택지·입력칸 테두리 (var(--border)는 흰 카드 위에서 너무 연해서 조금 진하게)
+const FIELD_BORDER = '1px solid color-mix(in srgb, var(--ink) 18%, transparent)'
 
 // 헤더 높이 + 아래 여백을 합친 값(px). 창 맨 오른쪽 스크롤바가 남으면 이 숫자를 올려요.
 const RESERVED_HEIGHT = 160
@@ -138,7 +142,7 @@ function ReelCard({ post, isLoggedIn, onVoted }) {
           }}
           style={{ display: 'flex', flexDirection: 'column', gap: 14, cursor: 'pointer' }}
         >
-          <span style={{ fontSize: 15, color: 'var(--muted)' }}>#{post.tag}</span>
+          <span className="tag" style={{ alignSelf: 'flex-start' }}>{post.tag}</span>
           <h2 style={{ margin: 0, fontSize: 28, lineHeight: 1.4 }}>{post.title}</h2>
           <p
             style={{
@@ -154,7 +158,15 @@ function ReelCard({ post, isLoggedIn, onVoted }) {
           >
             {post.content}
           </p>
-          <span style={{ fontSize: 15, color: 'var(--muted)' }}>{left}</span>
+          <span style={{ fontSize: 15, color: 'var(--muted)' }}>
+            투표 {post.response_count ?? 0}명 · {left}
+            {post.created_at && (
+              <>
+                {' · '}
+                <time dateTime={post.created_at}>{formatDateTime(post.created_at)}</time>
+              </>
+            )}
+          </span>
         </div>
 
         {/* 투표 영역 */}
@@ -176,7 +188,9 @@ function ReelCard({ post, isLoggedIn, onVoted }) {
                     style={{
                       padding: '14px 18px',
                       borderRadius: 12,
-                      border: '1px solid var(--border)',
+                      border: isSelected ? '1px solid var(--ink)' : FIELD_BORDER,
+                      boxShadow: isSelected ? 'inset 0 0 0 1px var(--ink)' : 'none', // 고르면 테두리를 두껍게 (칸 크기는 그대로)
+                      fontWeight: isSelected ? 700 : 400,
                       background: isSelected
                         ? 'color-mix(in srgb, var(--ink) 8%, var(--card))'
                         : 'var(--card)',
@@ -207,7 +221,7 @@ function ReelCard({ post, isLoggedIn, onVoted }) {
                       width: '100%',
                       boxSizing: 'border-box',
                       padding: 12,
-                      border: '1px solid var(--border)',
+                      border: FIELD_BORDER,
                       borderRadius: 12,
                       background: 'var(--card)',
                       color: 'var(--ink)',
