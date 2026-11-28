@@ -140,8 +140,11 @@ main:not(:has(> .post-card)) { max-width: 680px; margin: 0 auto; }
 .epilogue-banner-wrap > .epilogue-banner { margin: 0; }
 .epilogue-banner-more { margin-left: 6px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
 .epilogue-banner-list { list-style: none; margin: 6px 0 0; padding: 6px; border: 1px solid var(--card-border); border-radius: 14px; background: var(--card); -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); box-shadow: var(--shadow); }
-.epilogue-banner-list button { display: flex; gap: 10px; width: 100%; padding: 10px 12px; border: none; border-radius: 10px; background: transparent; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
-.epilogue-banner-list button:hover { background: var(--accent-soft); }
+.epilogue-banner-list li { display: flex; align-items: center; border-radius: 10px; }
+.epilogue-banner-list li:hover { background: var(--accent-soft); }
+.epilogue-banner-item { display: flex; flex: 1; min-width: 0; gap: 10px; padding: 10px 12px; border: none; background: transparent; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.epilogue-banner-item-close { flex-shrink: 0; width: 28px; height: 28px; margin-right: 6px; border: none; border-radius: 50%; background: transparent; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; }
+.epilogue-banner-item-close:hover { background: var(--card); color: var(--ink); }
 .epilogue-banner-open {
   flex-shrink: 0;
   min-height: 36px;
