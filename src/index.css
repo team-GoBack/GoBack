@@ -202,8 +202,13 @@ main:not(:has(> .post-card)) { max-width: 680px; margin: 0 auto; }
 .post-card p { margin: 0 0 10px; color: var(--muted); }
 .post-card small { color: var(--muted); }
 
-/* 마감 임박 카드 테두리 강조 (임시: 카드 안에 태그 다음 배지가 있으면 임박으로 봄. 나중에 class로 바꾸기) */
-.post-card:has(> .tag + span) { border-color: rgba(229, 72, 77, 0.45); background: linear-gradient(135deg, rgba(255, 236, 236, 0.8), var(--card)); }
+/* 카드 배지 (PostCard에서 className="badge badge-urgent" 처럼 사용) */
+.badge { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.badge-urgent { background: var(--accent); color: var(--on-primary); }
+.badge-hot { border: 1px solid currentColor; color: var(--warning); background: transparent; }
+
+/* 마감 임박 카드 테두리 강조 */
+.post-card:has(.badge-urgent) { border-color: rgba(229, 72, 77, 0.45); background: linear-gradient(135deg, rgba(255, 236, 236, 0.8), var(--card)); }
 
 .tag {
   display: inline-block;
