@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCurrentUser } from '../api/auth'
 import { createPost } from '../api/posts'
@@ -35,7 +35,8 @@ export default function WritePage() {
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [tag, setTag] = useState('연애')
+  const [tag, setTag] = useState('')
+  const firstTagRef = useRef(null)
   const [options, setOptions] = useState(['', ''])
   const [voteHours, setVoteHours] = useState(24) // 기본 1일
   const [isCustomTime, setIsCustomTime] = useState(false) // "직접 설정"을 골랐는지
@@ -334,6 +335,13 @@ export default function WritePage() {
       return
     }
 
+    // 태그는 사용자가 직접 선택해야 등록할 수 있음
+    if (!tag) {
+      setMessage('태그를 선택해 주세요.')
+      firstTagRef.current?.focus()
+      return
+    }
+
     const filledOptions = options.map((option) => option.trim()).filter((option) => option)
 
     if (filledOptions.length < 2) {
@@ -409,20 +417,31 @@ export default function WritePage() {
         </div>
 
         <div style={styles.field}>
-          <span style={styles.label}>태그</span>
-          <div className="tags">
+          <span id="story-tag-label" style={styles.label}>
+            태그 <span style={{ color: 'var(--accent)' }} aria-hidden="true">*</span>
+          </span>
+          <div className="tags" role="group" aria-labelledby="story-tag-label" aria-describedby={message === '태그를 선택해 주세요.' ? 'story-tag-error' : undefined}>
             {tags.map((item) => (
               <button
                 key={item}
                 type="button"
                 className={tag === item ? 'active' : ''}
                 aria-pressed={tag === item}
-                onClick={() => setTag(item)}
+                ref={item === tags[0] ? firstTagRef : undefined}
+                onClick={() => {
+                  setTag(item)
+                  if (message === '태그를 선택해 주세요.') setMessage('')
+                }}
               >
                 {item}
               </button>
             ))}
           </div>
+          {message === '태그를 선택해 주세요.' && (
+            <p id="story-tag-error" role="alert" style={{ ...styles.message, margin: '8px 0 0', fontSize: '14px' }}>
+              {message}
+            </p>
+          )}
         </div>
 
         <div style={styles.field}>
@@ -593,7 +612,7 @@ export default function WritePage() {
           </div>
         </div>
 
-        {message && (
+        {message && message !== '태그를 선택해 주세요.' && (
           <p role="alert" style={styles.message}>
             {message}
           </p>
