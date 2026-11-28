@@ -3,6 +3,9 @@
 import { Link } from 'react-router-dom'
 import { formatDateTime } from '../utils/date.js'
 
+// HOT 사연이 되기 위한 최소 투표 수
+const HOT_MIN = 3
+
 // 마감 시각을 받아서 "3시간 남음" 같은 글자로 바꿔주는 함수
 function getRemainingText(endsAt) {
   const diff = new Date(endsAt) - new Date() // 마감까지 남은 시간 (밀리초)
@@ -32,6 +35,8 @@ function getStatus(endsAt) {
 
 export default function PostCard({ post }) {
   const status = getStatus(post.vote_ends_at)
+  // HOT 사연 = 아직 마감 전 + 투표가 HOT_MIN명 이상
+  const isHot = status !== 'closed' && post.response_count >= HOT_MIN
 
   return (
     <Link
@@ -57,20 +62,9 @@ export default function PostCard({ post }) {
           }}
         >
           <span className="tag">{post.tag}</span>
+          {isHot && <span className="badge badge-hot">🔥 HOT</span>}
           {status === 'urgent' && (
-            <span
-              style={{
-                marginLeft: 8,
-                padding: '2px 8px',
-                borderRadius: 999,
-                backgroundColor: '#ff4d4f',
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 'bold',
-              }}
-            >
-              마감 임박
-            </span>
+            <span className="badge badge-urgent">마감 임박</span>
           )}
         </div>
 
