@@ -37,41 +37,125 @@ function getPostStatus(post, tab, now) {
     : { text: '결과 공개', color: 'var(--success)' }
 }
 
+// 마감됐지만 아직 마무리하지 않은 내 사연을 먼저 표시
+function needsFinish(post, now) {
+  return new Date(post.vote_ends_at).getTime() <= now && !post.finished
+}
+
+function hiddenKey(userId, tab) {
+  return `goback:hidden:${userId}:${tab}`
+}
+
+// 계정·탭별 숨김 기록 (저장소가 막혀 있어도 화면은 정상 동작)
+function readHidden(userId, tab) {
+  try {
+    const ids = JSON.parse(localStorage.getItem(hiddenKey(userId, tab)) ?? '[]')
+    return Array.isArray(ids) ? ids : []
+  } catch {
+    return []
+  }
+}
+
+function writeHidden(userId, tab, ids) {
+  try {
+    localStorage.setItem(hiddenKey(userId, tab), JSON.stringify(ids))
+    return true
+  } catch {
+    return false
+  }
+}
+
+const smallButtonStyle = {
+  font: 'inherit', fontSize: 13, color: 'var(--muted)',
+  background: 'var(--card)', border: '1px solid var(--border)',
+  borderRadius: 999, padding: '6px 12px', cursor: 'pointer',
+}
+
 // 내 활동 전용 작은 사연 카드
-function MyPostItem({ post, tab, now }) {
+function MyPostItem({ post, tab, now, hidden, onToggleHidden }) {
   const status = getPostStatus(post, tab, now)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const urgent = tab === 'mine' && needsFinish(post, now)
 
   return (
-    <Link
-      to={`/posts/${post.id}`}
+    <article
       className="post-card"
-      style={{ margin: 0, padding: '14px 16px', borderRadius: 16 }}
+      style={{ margin: 0, padding: 0, borderRadius: 16, position: 'relative', minWidth: 0,
+        border: urgent ? '1px solid var(--accent)' : '1px solid var(--card-border)',
+        opacity: hidden ? 0.6 : 1, zIndex: menuOpen ? 2 : undefined }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px 8px' }}>
-        <span className="tag" style={{ background: 'var(--card)' }}>{post.tag}</span>
-        {post.created_at && (
-          <time dateTime={post.created_at} style={{ color: 'var(--muted)', fontSize: 13, marginLeft: 'auto' }}>
-            {formatDateTime(post.created_at)}
-          </time>
+      {/* 링크와 메뉴 버튼을 분리해 버튼 클릭 시 상세 페이지로 이동하지 않도록 함 */}
+      <Link to={`/posts/${post.id}`} style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '14px 16px', borderRadius: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px 8px', paddingRight: 38, minHeight: 28 }}>
+          <span className="tag" style={{ background: 'var(--card)' }}>{post.tag}</span>
+          {post.created_at && (
+            <time dateTime={post.created_at} style={{ color: 'var(--muted)', fontSize: 13, marginLeft: 'auto' }}>
+              {formatDateTime(post.created_at)}
+            </time>
+          )}
+        </div>
+
+        <h3 style={{ margin: '10px 0', fontSize: 17, lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {post.title}
+        </h3>
+
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px 12px', fontSize: 13, marginTop: 'auto' }}>
+          <span style={{ color: 'var(--muted)' }}>투표 {post.response_count}명</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+            <span style={{ color: status.color, fontWeight: status.color === 'var(--muted)' ? 500 : 700 }}>
+              {status.text}
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <path d="m9 18 6-6-6-6" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
+      </Link>
+      <div
+        style={{ position: 'absolute', top: 12, right: 12 }}
+        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setMenuOpen(false) }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            e.currentTarget.querySelector('button')?.focus()
+            setMenuOpen(false)
+          }
+        }}
+      >
+        <button
+          type="button"
+          aria-label={`${post.title} 더보기`}
+          aria-expanded={menuOpen}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setMenuOpen(!menuOpen)
+          }}
+          style={{ ...smallButtonStyle, border: 'none', background: 'transparent', padding: 0, width: 32, height: 32, display: 'grid', placeItems: 'center' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true">
+            <circle cx="5" cy="12" r="1.8" />
+            <circle cx="12" cy="12" r="1.8" />
+            <circle cx="19" cy="12" r="1.8" />
+          </svg>
+        </button>
+        {menuOpen && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setMenuOpen(false)
+              onToggleHidden(post.id)
+            }}
+            style={{ ...smallButtonStyle, position: 'absolute', top: 38, right: 0, whiteSpace: 'nowrap',
+              borderRadius: 10, background: 'var(--bg)', boxShadow: 'var(--shadow)', color: 'var(--ink)', padding: '10px 14px' }}
+          >
+            {hidden ? '다시 보이기' : '목록에서 숨기기'}
+          </button>
         )}
       </div>
-
-      <h3 style={{ margin: '10px 0', fontSize: 17, lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>
-        {post.title}
-      </h3>
-
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px 12px', fontSize: 13 }}>
-        <span style={{ color: 'var(--muted)' }}>투표 {post.response_count}명</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
-          <span style={{ color: status.color, fontWeight: status.color === 'var(--muted)' ? 500 : 700 }}>
-            {status.text}
-          </span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-            <path d="m9 18 6-6-6-6" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-      </div>
-    </Link>
+    </article>
   )
 }
 
@@ -82,6 +166,30 @@ export default function MyPage() {
   const [authError, setAuthError] = useState(false)
   const [activity, setActivity] = useState(null)
   const [now, setNow] = useState(Date.now)
+  const [hiddenActivity, setHiddenActivity] = useState(null)
+  const [showHidden, setShowHidden] = useState(false)
+  const [storageError, setStorageError] = useState(false)
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 720px)').matches)
+
+  // 720px 이하에서는 1열, 그 외에는 2열
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 720px)')
+    const update = () => setNarrow(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  // 로그인 계정이 바뀌면 해당 계정의 숨김 기록만 읽음
+  useEffect(() => {
+    setShowHidden(false)
+    setStorageError(false)
+    setHiddenActivity(userId ? {
+      userId,
+      mine: readHidden(userId, 'mine'),
+      voted: readHidden(userId, 'voted'),
+    } : null)
+  }, [userId])
 
   // 첫 로그인 상태 확인 및 페이지를 보고 있는 동안 로그인·로그아웃 감지
   useEffect(() => {
@@ -137,30 +245,37 @@ export default function MyPage() {
   }, [userId])
 
   const currentActivity = activity?.userId === userId ? activity : null
+  const currentHidden = hiddenActivity?.userId === userId ? hiddenActivity : null
   const posts = currentActivity?.[tab] ?? []
+  const hiddenIds = currentHidden?.[tab] ?? []
+  const visiblePosts = posts.filter((post) => !hiddenIds.includes(post.id))
+  const hiddenPosts = posts.filter((post) => hiddenIds.includes(post.id))
+  const countVisible = (value) => (currentActivity?.[value] ?? [])
+    .filter((post) => !(currentHidden?.[value] ?? []).includes(post.id)).length
+  const ready = Boolean(currentActivity && currentHidden && !currentActivity.error)
+  const selectedPosts = showHidden ? hiddenPosts : visiblePosts
+  // 마무리 필요 사연을 먼저 표시하고 나머지 순서는 유지 (원본 배열 변경 금지)
+  const displayedPosts = tab === 'mine'
+    ? [...selectedPosts.filter((post) => needsFinish(post, now)), ...selectedPosts.filter((post) => !needsFinish(post, now))]
+    : selectedPosts
   const messageStyle = { color: 'var(--muted)', textAlign: 'center', padding: '28px 12px' }
 
-  function getTabStyle(value) {
-    const selected = tab === value
-    return {
-      minWidth: 0,
-      minHeight: 44,
-      padding: '10px 8px',
-      border: `1px solid ${selected ? 'var(--primary)' : 'var(--card-border)'}`,
-      borderRadius: 12,
-      background: selected ? 'var(--primary)' : 'var(--card)',
-      color: selected ? 'var(--on-primary)' : 'var(--ink)',
-      boxShadow: 'var(--shadow)',
-      font: 'inherit',
-      fontSize: 14,
-      fontWeight: selected ? 700 : 500,
-      cursor: 'pointer',
-      wordBreak: 'keep-all',
-    }
+  function toggleHidden(postId) {
+    if (!userId || !currentHidden) return
+    const next = hiddenIds.includes(postId)
+      ? hiddenIds.filter((id) => id !== postId)
+      : [...hiddenIds, postId]
+    setHiddenActivity({ ...currentHidden, [tab]: next })
+    setStorageError(!writeHidden(userId, tab, next))
+  }
+
+  function changeTab(value) {
+    setTab(value)
+    setShowHidden(false)
   }
 
   return (
-    <main style={{ maxWidth: 680, margin: '0 auto' }}>
+    <main style={{ maxWidth: 960, margin: '0 auto' }}>
       <h2>내 활동</h2>
 
       {authError ? (
@@ -171,30 +286,46 @@ export default function MyPage() {
         <p style={messageStyle}>로그인하면 내 활동을 볼 수 있어요</p>
       ) : (
         <>
-          <div role="group" aria-label="내 활동 유형" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginBottom: 16 }}>
-            <button type="button" aria-pressed={tab === 'mine'} onClick={() => setTab('mine')} style={getTabStyle('mine')}>
-              내가 쓴 사연
-            </button>
-            <button type="button" aria-pressed={tab === 'voted'} onClick={() => setTab('voted')} style={getTabStyle('voted')}>
-              내가 투표한 사연
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+            <div className="tags" role="group" aria-label="내 활동 유형" style={{ marginBottom: 0 }}>
+              <button type="button" className={tab === 'mine' ? 'active' : ''} aria-pressed={tab === 'mine'} onClick={() => changeTab('mine')}>
+                내가 쓴 사연{ready ? ` ${countVisible('mine')}` : ''}
+              </button>
+              <button type="button" className={tab === 'voted' ? 'active' : ''} aria-pressed={tab === 'voted'} onClick={() => changeTab('voted')}>
+                내가 투표한 사연{ready ? ` ${countVisible('voted')}` : ''}
+              </button>
+            </div>
+            {ready && (showHidden || hiddenPosts.length > 0) && (
+              <button type="button" aria-pressed={showHidden} onClick={() => setShowHidden(!showHidden)} style={{ ...smallButtonStyle, marginLeft: 'auto' }}>
+                {showHidden ? '← 전체 사연 보기' : `숨긴 사연 ${hiddenPosts.length}개 보기`}
+              </button>
+            )}
           </div>
 
-          {!currentActivity ? (
+          {!currentActivity || !currentHidden ? (
             <p role="status" style={messageStyle}>불러오는 중...</p>
           ) : currentActivity.error ? (
             <p style={messageStyle}>내 활동을 불러오지 못했어요. 새로고침해 주세요.</p>
-          ) : posts.length === 0 ? (
-            <p style={messageStyle}>
-              {tab === 'mine' ? '아직 쓴 사연이 없어요' : '아직 투표한 사연이 없어요'}
-            </p>
           ) : (
-            // main 바로 아래에 post-card를 두면 메인 페이지 벤토 그리드가 적용됨
-            <section aria-label={tab === 'mine' ? '내가 쓴 사연 목록' : '내가 투표한 사연 목록'} style={{ display: 'grid', gap: 10 }}>
-              {posts.map((post) => (
-                <MyPostItem key={post.id} post={post} tab={tab} now={now} />
-              ))}
-            </section>
+            <>
+              {storageError && (
+                <p role="status" style={{ color: 'var(--muted)', fontSize: 13 }}>
+                  숨김 기록을 브라우저에 저장하지 못했어요. 새로고침하면 변경 사항이 사라질 수 있어요.
+                </p>
+              )}
+              {displayedPosts.length === 0 ? (
+                <p style={messageStyle}>
+                  {showHidden ? '숨긴 사연이 없어요' : posts.length > 0 ? '표시할 사연이 없어요' : tab === 'mine' ? '아직 쓴 사연이 없어요' : '아직 투표한 사연이 없어요'}
+                </p>
+              ) : (
+                // main 바로 아래에 post-card를 두면 메인 페이지 벤토 그리드가 적용됨
+                <section aria-label={showHidden ? '숨긴 사연 목록' : tab === 'mine' ? '내가 쓴 사연 목록' : '내가 투표한 사연 목록'} style={{ display: 'grid', gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                  {displayedPosts.map((post) => (
+                    <MyPostItem key={`${userId}:${tab}:${post.id}`} post={post} tab={tab} now={now} hidden={showHidden} onToggleHidden={toggleHidden} />
+                  ))}
+                </section>
+              )}
+            </>
           )}
         </>
       )}
