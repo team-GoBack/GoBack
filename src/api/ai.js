@@ -16,14 +16,19 @@ export async function getAiAnswer(postId) {
   return data ?? null
 }
 
-// AI에게 답변 요청 (투표 0명인 사연만, 한 번 만들면 저장됨)
+// AI에게 답변 요청 (사연 작성자만, 투표 0명인 사연만, 한 번 만들면 저장됨)
 // 넣는 값: postId
 // 돌려주는 값: { ok: true, content } 또는 { ok: false, message }
 export async function requestAiAnswer(postId) {
   try {
+    // 서버가 "작성자인지" 확인할 수 있게 로그인 토큰을 같이 보냄
+    const { data } = await supabase.auth.getSession()
+    const token = data.session?.access_token
+    if (!token) return { ok: false, message: '로그인이 필요해요' }
+
     const res = await fetch('/api/ai-answer', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ postId: Number(postId) }),
     })
     const json = await res.json().catch(() => ({}))

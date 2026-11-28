@@ -472,7 +472,13 @@ export default function PostDetailPage() {
           {post.content}
         </p>
         <RecommendButton key={id} postId={id} />
-        <AiAnswerCard key={`ai-${id}`} postId={id} responseCount={post.response_count} />
+        {/* 투표하면(결과를 볼 수 있게 되면) 다시 불러오도록 key에 포함 */}
+        <AiAnswerCard
+          key={`ai-${id}-${Boolean(status?.canSeeResponses)}`}
+          postId={id}
+          responseCount={post.response_count}
+          isAuthor={Boolean(status?.isAuthor)}
+        />
         {post.vote_ends_at && (
           <div
             style={{
