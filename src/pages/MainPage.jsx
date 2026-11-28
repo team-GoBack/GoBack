@@ -1,4 +1,3 @@
-
 // [프론트 팀] 메인 페이지: 사연 목록
 // 흐름: 화면이 열림 → getPosts()로 주문 → 처음 열 때만 "불러오는 중..." → 받은 사연을 정렬해서 카드로 그림
 import { useEffect, useState } from 'react'
@@ -10,6 +9,31 @@ const SORTS = [
   { key: 'latest', label: '최신순' },
   { key: 'popular', label: '투표 많은 순' },
 ]
+
+// HOT 사연이 되기 위한 최소 투표 수
+const HOT_MIN = 3
+
+// HOT 사연인지 알려주는 함수 = 아직 마감 전 + 투표가 HOT_MIN명 이상
+function isHotPost(post) {
+  const notClosed = new Date(post.vote_ends_at) > new Date()
+  return notClosed && (post.response_count || 0) >= HOT_MIN
+}
+
+// 가장 HOT한 사연 하나를 맨 앞으로 옮긴 "새 배열"을 만들어 주는 함수 (원본 list는 그대로)
+// 동점이면 목록에서 더 앞에 있는 사연을 고름. HOT 사연이 없으면 순서 그대로.
+function moveHotFirst(list) {
+  let topHot = null
+  for (const post of list) {
+    if (!isHotPost(post)) continue
+    // ">" 라서 동점일 때는 먼저 나온(더 앞에 있는) 사연이 그대로 남음
+    if (!topHot || (post.response_count || 0) > (topHot.response_count || 0)) {
+      topHot = post
+    }
+  }
+
+  if (!topHot) return list
+  return [topHot, ...list.filter((post) => post.id !== topHot.id)]
+}
 
 export default function MainPage() {
   const [posts, setPosts] = useState([])     // 받아온 사연 목록을 기억하는 곳
@@ -48,6 +72,10 @@ export default function MainPage() {
     sort === 'popular'
       ? [...posts].sort((a, b) => (b.response_count || 0) - (a.response_count || 0))
       : posts
+
+  // 정렬이 끝난 목록에서 가장 HOT한 사연을 맨 앞(큰 칸)으로
+  // (나중에 검색·토글이 생겨도 "거르기 → 정렬 → HOT 맨 앞" 순서가 되도록 화면에 그리기 직전에 둠)
+  const displayPosts = moveHotFirst(sortedPosts)
 
   return (
     <main>
@@ -90,8 +118,8 @@ export default function MainPage() {
       </div>
 
       {loading && !hasLoaded && <p>불러오는 중...</p>}
-      {!loading && sortedPosts.length === 0 && <p>사연이 없어요.</p>}
-      {sortedPosts.map((post) => (
+      {!loading && displayPosts.length === 0 && <p>사연이 없어요.</p>}
+      {displayPosts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
     </main>
