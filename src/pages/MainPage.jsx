@@ -6,7 +6,7 @@ import { getCurrentUser, onAuthChange } from '../api/auth.js'
 import { getRecommendCounts } from '../api/recommends.js'
 import PostCard from '../components/PostCard.jsx'
 
-const TAGS = ['전체', '연애', '입시', '기타']
+const TAGS = ['전체', '연애', '학업·진로', '인간관계', '재테크', '일상', '기타']
 const SORTS = [
   { key: 'latest', label: '최신순' },
   { key: 'popular', label: '투표 많은 순' },

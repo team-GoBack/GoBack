@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { closePost, deletePost, updatePost } from '../api/posts'
 
-const tags = ['연애', '입시', '기타']
+const tags = ['연애', '학업·진로', '인간관계', '재테크', '일상', '기타']
 
 export default function PostActions({ post, status, onUpdated }) {
     const navigate = useNavigate()

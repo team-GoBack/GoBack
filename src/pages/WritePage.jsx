@@ -4,7 +4,7 @@ import { getCurrentUser } from '../api/auth'
 import { createPost } from '../api/posts'
 import HaedalEasterEgg from '../components/HaedalEasterEgg.jsx'
 
-const tags = ['연애', '입시', '기타']
+const tags = ['연애', '학업·진로', '인간관계', '재테크', '일상', '기타']
 const voteTimes = [
   { hours: 1, label: '1시간' },
   { hours: 24, label: '1일' },
