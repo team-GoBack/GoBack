@@ -17,7 +17,7 @@ const KINDS = {
     text: (item) => <>마감된 내 사연 <strong>"{item.title}"</strong>이 최종 선택을 기다려요</>,
     button: '마무리하러 가기',
     key: (item) => `pending:${item.post_id}`,
-    markRead: null, // 마무리하면 저절로 사라짐. 지우면 이번 접속 동안만 숨김
+    markRead: null, // 마무리하면 저절로 사라짐. ×로 지우면 그 사연 알림은 다시 안 뜸
   },
   finish: {
     icon: (item) => (item.is_best ? '🏆' : '🗳️'),
@@ -41,7 +41,7 @@ const KINDS = {
 }
 const ORDER = ['pending', 'finish', 'epilogue']
 
-// 하나씩 지운 알림 기억 (이 브라우저, 계정마다 따로). 마무리 필요는 여기 저장 안 함(이번 접속 동안만)
+// 지운 알림 기억 (이 브라우저, 계정마다 따로)
 function dismissedKey(userId) {
   return `goback:notice-dismissed:${userId}`
 }
@@ -69,15 +69,11 @@ export default function EpilogueBanner() {
   const [userId, setUserId] = useState(null)
   const [lists, setLists] = useState({ pending: [], finish: [], epilogue: [] })
   const [saved, setSaved] = useState(new Set()) // 하나씩 지운 알림 (브라우저에 저장된 것)
-  const [sessionGone, setSessionGone] = useState(new Set()) // 하나씩 지운 마무리 필요 알림 (이번 접속 동안만)
-  const [hidden, setHidden] = useState({}) // 이번 접속 동안 통째로 닫은 종류 (마무리 필요)
   const [expanded, setExpanded] = useState(false) // 전체 목록 펼침
   const [authVersion, setAuthVersion] = useState(0) // 로그인 상태가 바뀌면 다시 확인하기 위한 숫자
 
   useEffect(() => {
     const unsubscribe = onAuthChange(() => {
-      setHidden({})
-      setSessionGone(new Set())
       setAuthVersion((n) => n + 1)
     })
     return unsubscribe
@@ -104,10 +100,9 @@ export default function EpilogueBanner() {
 
   // 지운 알림을 뺀, 실제로 보일 목록
   const visible = {}
-  const isGone = (k) => saved.has(k) || sessionGone.has(k)
-  for (const k of ORDER) visible[k] = lists[k].filter((item) => !isGone(KINDS[k].key(item)))
+  for (const k of ORDER) visible[k] = lists[k].filter((item) => !saved.has(KINDS[k].key(item)))
 
-  const kind = ORDER.find((k) => visible[k].length > 0 && !hidden[k])
+  const kind = ORDER.find((k) => visible[k].length > 0)
   if (!kind) return null
 
   const info = KINDS[kind]
@@ -115,16 +110,17 @@ export default function EpilogueBanner() {
   const latest = items[0]
   const extra = items.length - 1
 
+  // 알림들을 지운 것으로 기억 (새로고침해도 다시 안 뜸)
+  function forget(list) {
+    const next = new Set(saved)
+    for (const item of list) next.add(info.key(item))
+    setSaved(next)
+    if (userId) saveDismissed(userId, next)
+  }
+
   // 알림 하나만 지우기
   function dismissOne(item) {
-    const key = info.key(item)
-    if (kind === 'pending') {
-      setSessionGone((prev) => new Set(prev).add(key))
-    } else {
-      const next = new Set(saved).add(key)
-      setSaved(next)
-      if (userId) saveDismissed(userId, next)
-    }
+    forget([item])
     if (items.length <= 1) setExpanded(false)
   }
 
@@ -135,7 +131,7 @@ export default function EpilogueBanner() {
       await info.markRead()
       setLists((prev) => ({ ...prev, [kind]: [] }))
     } else {
-      setHidden((prev) => ({ ...prev, [kind]: true }))
+      forget(items)
     }
   }
 
