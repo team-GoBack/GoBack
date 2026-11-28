@@ -63,6 +63,9 @@ export default function PostCard({ post }) {
         >
           <span className="tag">{post.tag}</span>
           {isHot && <span className="badge badge-hot">🔥 HOT</span>}
+          {post.wants_epilogue && (
+            <span className="badge badge-epilogue" title="사연자가 후일담을 약속했어요">📮 후일담</span>
+          )}
           {status === 'urgent' && (
             <span className="badge badge-urgent">마감 임박</span>
           )}

@@ -142,7 +142,12 @@ function ReelCard({ post, isLoggedIn, onVoted }) {
           }}
           style={{ display: 'flex', flexDirection: 'column', gap: 14, cursor: 'pointer' }}
         >
-          <span className="tag" style={{ alignSelf: 'flex-start' }}>{post.tag}</span>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+            <span className="tag">{post.tag}</span>
+            {post.wants_epilogue && (
+              <span className="badge badge-epilogue" style={{ marginLeft: 0 }} title="사연자가 후일담을 약속했어요">📮 후일담</span>
+            )}
+          </div>
           <h2 style={{ margin: 0, fontSize: 28, lineHeight: 1.4 }}>{post.title}</h2>
           <p
             style={{
