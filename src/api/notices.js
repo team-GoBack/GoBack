@@ -98,3 +98,76 @@ export async function markFinishesRead() {
   const me = await getCurrentUser()
   if (me) writeSeenAt(me.id)
 }
+
+// ===== 알림 공통 도우미 (배너와 종이 같이 씀) =====
+
+// 알림 하나를 구분하는 이름표
+export function noticeKey(kind, item) {
+  return kind === 'epilogue' ? `epilogue:${item.id}` : `${kind}:${item.post_id}`
+}
+
+// 하나씩 지운 알림 기억 (이 브라우저, 계정마다 따로)
+function dismissedStorageKey(userId) {
+  return `goback:notice-dismissed:${userId}`
+}
+
+export function loadDismissed(userId) {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(dismissedStorageKey(userId)) || '[]'))
+  } catch {
+    return new Set()
+  }
+}
+
+export function saveDismissed(userId, set) {
+  try {
+    localStorage.setItem(dismissedStorageKey(userId), JSON.stringify([...set].slice(-500)))
+  } catch {
+    // 저장이 안 되는 브라우저면 다음에 또 보일 뿐, 문제없음
+  }
+}
+
+// 알림 상태가 바뀌었다고 화면 전체에 알리기 (배너에서 지우면 종 숫자도 바로 갱신)
+export const NOTICES_CHANGED = 'goback:notices-changed'
+export function notifyNoticesChanged() {
+  window.dispatchEvent(new Event(NOTICES_CHANGED))
+}
+
+// 최근 알림 기록 (읽은 것 포함, 최신순)
+// 넣는 값: limit (기본 30)
+// 돌려주는 값: [{ kind, post_id, title, at, is_best?, id? }, ...]  (로그인 안 했으면 [])
+//   - kind: 'pending'(마무리 필요) | 'finish'(최종 선택 공개) | 'epilogue'(새 후일담)
+//   - at: 알림이 생긴 시각
+export async function getNoticeHistory(limit = 30) {
+  const me = await getCurrentUser()
+  if (!me) return []
+
+  const [{ data: mine }, { data: myPending }] = await Promise.all([
+    supabase.from('responses').select('id, post_id').eq('user_id', me.id),
+    supabase
+      .from('posts')
+      .select('id, title, vote_ends_at')
+      .eq('user_id', me.id)
+      .is('chosen_option_id', null)
+      .lte('vote_ends_at', new Date().toISOString()),
+  ])
+
+  const items = (myPending ?? []).map((p) => ({ kind: 'pending', post_id: p.id, title: p.title, at: p.vote_ends_at }))
+
+  const postIds = (mine ?? []).map((r) => r.post_id)
+  if (postIds.length > 0) {
+    const myResponseIds = new Set(mine.map((r) => r.id))
+    const [{ data: finished }, { data: epilogues }] = await Promise.all([
+      supabase.from('posts').select('id, title, finished_at, best_response_id').in('id', postIds).not('finished_at', 'is', null),
+      supabase.from('epilogues').select('id, post_id, created_at, posts(title)').in('post_id', postIds),
+    ])
+    for (const p of finished ?? []) {
+      items.push({ kind: 'finish', post_id: p.id, title: p.title, at: p.finished_at, is_best: myResponseIds.has(p.best_response_id) })
+    }
+    for (const e of epilogues ?? []) {
+      items.push({ kind: 'epilogue', id: e.id, post_id: e.post_id, title: e.posts?.title ?? '사연', at: e.created_at })
+    }
+  }
+
+  return items.sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, limit)
+}

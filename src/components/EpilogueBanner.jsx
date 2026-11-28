@@ -7,7 +7,15 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { getUnreadEpilogues, markEpiloguesRead } from '../api/epilogues.js'
-import { getPendingFinishes, getUnreadFinishes, markFinishesRead } from '../api/notices.js'
+import {
+  getPendingFinishes,
+  getUnreadFinishes,
+  markFinishesRead,
+  loadDismissed,
+  saveDismissed,
+  notifyNoticesChanged,
+  NOTICES_CHANGED,
+} from '../api/notices.js'
 import { getCurrentUser, onAuthChange } from '../api/auth.js'
 
 // 알림 종류별 모양 (icon, text는 알림 하나(item)를 받아서 정함)
@@ -41,28 +49,6 @@ const KINDS = {
 }
 const ORDER = ['pending', 'finish', 'epilogue']
 
-// 지운 알림 기억 (이 브라우저, 계정마다 따로)
-function dismissedKey(userId) {
-  return `goback:notice-dismissed:${userId}`
-}
-
-function loadDismissed(userId) {
-  try {
-    return new Set(JSON.parse(localStorage.getItem(dismissedKey(userId)) || '[]'))
-  } catch {
-    return new Set()
-  }
-}
-
-function saveDismissed(userId, set) {
-  try {
-    const saved = [...set].slice(-500) // 너무 쌓이지 않게
-    localStorage.setItem(dismissedKey(userId), JSON.stringify(saved))
-  } catch {
-    // 저장이 안 되는 브라우저면 다음에 또 보일 뿐, 문제없음
-  }
-}
-
 export default function EpilogueBanner() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -76,7 +62,13 @@ export default function EpilogueBanner() {
     const unsubscribe = onAuthChange(() => {
       setAuthVersion((n) => n + 1)
     })
-    return unsubscribe
+    // 종(알림 기록)에서 읽음 처리하면 배너도 다시 확인
+    const refresh = () => setAuthVersion((n) => n + 1)
+    window.addEventListener(NOTICES_CHANGED, refresh)
+    return () => {
+      unsubscribe()
+      window.removeEventListener(NOTICES_CHANGED, refresh)
+    }
   }, [])
 
   useEffect(() => {
@@ -116,6 +108,7 @@ export default function EpilogueBanner() {
     for (const item of list) next.add(info.key(item))
     setSaved(next)
     if (userId) saveDismissed(userId, next)
+    notifyNoticesChanged()
   }
 
   // 알림 하나만 지우기
@@ -130,6 +123,7 @@ export default function EpilogueBanner() {
     if (info.markRead) {
       await info.markRead()
       setLists((prev) => ({ ...prev, [kind]: [] }))
+      notifyNoticesChanged()
     } else {
       forget(items)
     }
