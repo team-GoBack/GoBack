@@ -182,3 +182,78 @@ export async function getFinish(id) {
   if (error || !data || data.chosen_option_id === null) return null
   return data
 }
+
+
+// ===== 내 활동 페이지용 =====
+
+// 내가 쓴 사연 (최신순)
+// 돌려주는 값: [{ id, title, content, tag, vote_ends_at, created_at, wants_epilogue, finished, response_count }, ...]
+//   - finished: 사연자 마무리(최종 선택 + Best Pick)를 했는지 (true/false)
+//   - 로그인 안 했으면 []
+export async function getMyPosts() {
+  const me = await getCurrentUser()
+  if (!me) return []
+
+  const [{ data, error }, counts] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('id, title, content, tag, vote_ends_at, created_at, wants_epilogue, chosen_option_id')
+      .eq('user_id', me.id)
+      .order('created_at', { ascending: false }),
+    getCounts(),
+  ])
+  if (error) {
+    console.error('getMyPosts 실패:', error)
+    return []
+  }
+  return data.map(({ chosen_option_id, ...post }) => ({
+    ...post,
+    finished: chosen_option_id !== null,
+    response_count: counts[post.id] ?? 0,
+  }))
+}
+
+// 내가 투표한 사연 (내가 투표한 시각 최신순)
+// 돌려주는 값: [{ id, title, content, tag, vote_ends_at, created_at, wants_epilogue, finished, response_count, voted_at }, ...]
+//   - voted_at: 내가 투표한 시각
+//   - 로그인 안 했으면 []
+export async function getMyVotedPosts() {
+  const me = await getCurrentUser()
+  if (!me) return []
+
+  const { data: mine, error: myError } = await supabase
+    .from('responses')
+    .select('post_id, created_at')
+    .eq('user_id', me.id)
+    .order('created_at', { ascending: false })
+  if (myError) {
+    console.error('getMyVotedPosts 실패:', myError)
+    return []
+  }
+  if (mine.length === 0) return []
+
+  const [{ data, error }, counts] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('id, title, content, tag, vote_ends_at, created_at, wants_epilogue, chosen_option_id')
+      .in('id', mine.map((r) => r.post_id)),
+    getCounts(),
+  ])
+  if (error) {
+    console.error('getMyVotedPosts 실패:', error)
+    return []
+  }
+
+  const byId = Object.fromEntries(data.map((p) => [p.id, p]))
+  return mine
+    .filter((r) => byId[r.post_id]) // 그사이 삭제된 사연은 빼기
+    .map((r) => {
+      const { chosen_option_id, ...post } = byId[r.post_id]
+      return {
+        ...post,
+        finished: chosen_option_id !== null,
+        response_count: counts[post.id] ?? 0,
+        voted_at: r.created_at,
+      }
+    })
+}

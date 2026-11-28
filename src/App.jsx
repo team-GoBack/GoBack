@@ -5,6 +5,7 @@ import MainPage from './pages/MainPage.jsx'
 import PostDetailPage from './pages/PostDetailPage.jsx'
 import WritePage from './pages/WritePage.jsx'
 import ReelsPage from './pages/ReelsPage.jsx'
+import MyPage from './pages/MyPage.jsx'
 import LoginButton from './components/LoginButton.jsx'
 import EpilogueBanner from './components/EpilogueBanner.jsx'
 
@@ -22,6 +23,7 @@ export default function App() {
             </svg>
             <span>Swipe</span>
           </Link>
+          <Link to="/me" className="reels-link">내 활동</Link>
           <LoginButton />
           <Link to="/write" className="write-btn">사연 쓰기</Link>
         </div>
@@ -35,6 +37,7 @@ export default function App() {
         <Route path="/posts/:id" element={<PostDetailPage />} />
         <Route path="/write" element={<WritePage />} />
         <Route path="/reels" element={<ReelsPage />} />
+        <Route path="/me" element={<MyPage />} />
       </Routes>
     </div>
   )
