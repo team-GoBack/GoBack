@@ -1,7 +1,9 @@
 // [프론트 팀] 메인 페이지: 사연 목록
 // 흐름: 화면이 열림 → getPosts()로 주문 → 처음 열 때만 "불러오는 중..." → 받은 사연을 정렬해서 카드로 그림
 import { useEffect, useState } from 'react'
-import { getPosts } from '../api/posts.js'
+import { getPosts, getMyVotedPosts } from '../api/posts.js'
+import { getCurrentUser, onAuthChange } from '../api/auth.js'
+import { getRecommendCounts } from '../api/recommends.js'
 import PostCard from '../components/PostCard.jsx'
 
 const TAGS = ['전체', '연애', '입시', '기타']
@@ -56,7 +58,72 @@ export default function MainPage() {
 
   const [search, setSearch] = useState('')
   const [ongoingOnly, setOngoingOnly] = useState(false)
+  const [recommendCounts, setRecommendCounts] = useState(null)
+  const [userId, setUserId] = useState(null)
+  const [myVotes, setMyVotes] = useState(null)
   const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 760px)').matches)
+
+  // 전체 사연의 추천 수를 한 번에 가져옴
+  useEffect(() => {
+    let ignore = false
+
+    getRecommendCounts()
+      .then((counts) => {
+        if (!ignore) setRecommendCounts(counts)
+      })
+      .catch((error) => {
+        console.error('추천 수 조회 실패:', error)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  // 로그인 상태 확인 및 로그인·로그아웃 감지
+  useEffect(() => {
+    let active = true
+    let authChanged = false
+    const unsubscribe = onAuthChange((user) => {
+      if (!active) return
+      authChanged = true
+      setUserId(user?.id ?? null)
+    })
+
+    getCurrentUser()
+      .then((user) => {
+        if (active && !authChanged) setUserId(user?.id ?? null)
+      })
+      .catch((error) => {
+        console.error('로그인 상태 확인 실패:', error)
+      })
+
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
+
+  // 로그인한 계정의 투표 기록만 한 번에 조회 (카드마다 호출하지 않음)
+  useEffect(() => {
+    let ignore = false
+    setMyVotes(null)
+    if (!userId) return
+
+    getMyVotedPosts()
+      .then((result) => {
+        if (!ignore) {
+          setMyVotes({ userId, ids: new Set((result ?? []).map((post) => post.id)) })
+        }
+      })
+      .catch((error) => {
+        console.error('내 투표 기록 조회 실패:', error)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [userId])
 
   // 좁은 화면에서는 검색창을 캐치프레이즈 아래로 내림
   useEffect(() => {
@@ -168,7 +235,16 @@ export default function MainPage() {
       {loading && !hasLoaded && <p>불러오는 중...</p>}
       {!loading && displayPosts.length === 0 && <p>{keyword || ongoingOnly ? '검색 결과가 없어요' : '사연이 없어요.'}</p>}
       {displayPosts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard
+          key={post.id}
+          post={post}
+          hasVoted={Boolean(userId && myVotes?.userId === userId && myVotes.ids.has(post.id))}
+          recommendCount={
+            recommendCounts === null
+              ? null
+              : (recommendCounts[post.id] ?? 0)
+          }
+        />
       ))}
     </main>
   )
