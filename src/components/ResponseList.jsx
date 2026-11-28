@@ -1,6 +1,68 @@
 // [프론트 팀] 댓글 목록 컴포넌트 (작성자, 선택한 답변, 작성 시각, 댓글 내용)
 // props로 댓글 목록(responses)과 선택지 목록(options)을 받아 화면에 표시
 // bestResponseId를 받아 사연 작성자가 선정한 Best Pick 댓글을 표시
+import { useEffect, useRef, useState } from 'react'
+import { optionColor, optionLetter, shortLabel } from '../utils/optionColor.js'
+
+// 댓글 본문: 5줄이 넘으면 접어 두고 "더 보기"로 펼침
+const CLAMP_LINES = 5
+function CommentText({ text }) {
+  const ref = useRef(null)
+  const [open, setOpen] = useState(false)
+  const [overflow, setOverflow] = useState(false)
+
+  // 접힌 상태에서 실제로 잘렸는지 확인 (창 크기가 바뀌면 다시 확인)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const check = () => {
+      if (!open) setOverflow(el.scrollHeight > el.clientHeight + 1)
+    }
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [text, open])
+
+  return (
+    <>
+      <p
+        ref={ref}
+        style={{
+          margin: '12px 0 0',
+          lineHeight: 1.65,
+          whiteSpace: 'pre-wrap',
+          overflowWrap: 'anywhere',
+          color: 'var(--ink)',
+          ...(open
+            ? {}
+            : { display: '-webkit-box', WebkitLineClamp: CLAMP_LINES, WebkitBoxOrient: 'vertical', overflow: 'hidden' }),
+        }}
+      >
+        {text}
+      </p>
+      {(overflow || open) && (
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          style={{
+            marginTop: '6px',
+            padding: 0,
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--muted)',
+            font: 'inherit',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {open ? '접기' : '더 보기'}
+        </button>
+      )}
+    </>
+  )
+}
 
 // 댓글 작성 시각만 연도·오전/오후 없이 24시간제로 표시
 function formatCommentDate(value) {
@@ -25,6 +87,11 @@ export default function ResponseList({ responses, options, bestResponseId }) {
       ]
 
   // 선택지 ID로 선택지 이름 찾기
+  // 선택지 순서(0~4) → 색을 정할 때 사용
+  function getOptionIndex(optionId) {
+    return options.findIndex((option) => option.id === optionId)
+  }
+
   function getOptionLabel(optionId) {
     return options.find((option) => option.id === optionId)?.label ?? '선택지'
   }
@@ -110,22 +177,24 @@ export default function ResponseList({ responses, options, bestResponseId }) {
                   익명{number}{response.is_mine ? ' (나)' : ''}
                 </strong>
 
-                {/* 선택한 답변을 은은한 태그로 표시 */}
+                {/* 선택한 답변을 선택지 색 태그로 표시 (길면 15자까지만, 전체는 마우스를 올리면 보임) */}
                 <span
+                  title={getOptionLabel(response.option_id)}
                   style={{
-                    display: 'inline-block',
+                    display: 'inline-flex',
+                    alignItems: 'center',
                     maxWidth: '100%',
-                    padding: '5px 10px',
+                    padding: '4px 12px',
                     borderRadius: '999px',
-                    background: 'color-mix(in srgb, var(--ink) 5%, var(--card))',
-                    color: 'var(--ink)',
-                    fontSize: '15px',
-                    fontWeight: 500,
+                    background: `color-mix(in srgb, ${optionColor(getOptionIndex(response.option_id))} 12%, var(--card))`,
+                    color: optionColor(getOptionIndex(response.option_id)),
+                    fontSize: '14px',
+                    fontWeight: 600,
                     lineHeight: 1.3,
-                    overflowWrap: 'anywhere',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  {getOptionLabel(response.option_id)}
+                  {optionLetter(getOptionIndex(response.option_id))} · {shortLabel(getOptionLabel(response.option_id))}
                 </span>
 
                 {/* 미션 6: 사연 작성자가 선정한 Best Pick 댓글 표시 */}
@@ -176,17 +245,7 @@ export default function ResponseList({ responses, options, bestResponseId }) {
               )}
             </div>
 
-            <p
-              style={{
-                margin: '12px 0 0',
-                lineHeight: 1.65,
-                whiteSpace: 'pre-wrap',
-                overflowWrap: 'anywhere',
-                color: 'var(--ink)',
-              }}
-            >
-              {response.content}
-            </p>
+            <CommentText text={response.content} />
           </article>
         ))
       )}

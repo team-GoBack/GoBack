@@ -2,6 +2,7 @@
 // props로 투표 결과 목록(results)을 받아 선택지별 결과를 화면에 표시
 // myOptionId를 받아 내가 투표한 선택지를 표시
 // authorOptionId를 받아 사연 작성자의 최종 선택을 표시
+import { optionColor, optionLetter } from '../utils/optionColor.js'
 
 export default function VoteResults({ results, myOptionId, authorOptionId }) {
   const totalVotes = results.reduce((sum, result) => sum + result.count, 0)
@@ -28,7 +29,7 @@ export default function VoteResults({ results, myOptionId, authorOptionId }) {
       {results.length === 0 ? (
         <p style={{ color: 'var(--muted)' }}>아직 투표 결과가 없습니다.</p>
       ) : (
-        results.map((result) => {
+        results.map((result, index) => {
           const percentage = totalVotes > 0
             ? Math.round((result.count / totalVotes) * 100)
             : 0
@@ -64,6 +65,24 @@ export default function VoteResults({ results, myOptionId, authorOptionId }) {
                     minWidth: 0,
                   }}
                 >
+                  {/* 선택지 글자 배지 A, B, C… (댓글의 선택지 태그와 같은 색) */}
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      display: 'inline-grid',
+                      placeItems: 'center',
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '7px',
+                      background: `color-mix(in srgb, ${optionColor(index)} 14%, var(--card))`,
+                      color: optionColor(index),
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {optionLetter(index)}
+                  </span>
                   <span style={{ overflowWrap: 'anywhere' }}>
                     {result.label}
                   </span>
@@ -103,7 +122,7 @@ export default function VoteResults({ results, myOptionId, authorOptionId }) {
                   )}
                 </div>
 
-                <span style={{ whiteSpace: 'nowrap', color: 'var(--muted)' }}>
+                <span style={{ whiteSpace: 'nowrap', color: optionColor(index), fontWeight: 700 }}>
                   {result.count}표 ({percentage}%)
                 </span>
               </div>
@@ -127,9 +146,10 @@ export default function VoteResults({ results, myOptionId, authorOptionId }) {
                     width: `${percentage}%`,
                     height: '100%',
                     borderRadius: '999px',
+                    // 선택지 색. 1위는 진하게, 나머지는 살짝 연하게
                     background: isTopChoice
-                      ? 'var(--ink-soft)'
-                      : 'color-mix(in srgb, var(--muted) 45%, var(--card))',
+                      ? optionColor(index)
+                      : `color-mix(in srgb, ${optionColor(index)} 55%, var(--card))`,
                   }}
                 />
               </div>
