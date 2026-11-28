@@ -60,7 +60,10 @@ export default function AiAnswerCard({ postId, isAuthor }) {
   return (
     <section style={{ ...boxStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
       <span style={{ color: 'var(--muted)', fontSize: '14px' }}>
-        사람들의 투표와 별개로, AI의 의견도 들어볼까요?
+        AI의 의견을 물어볼 수 있어요!
+        <span style={{ display: 'block', marginTop: '4px', fontSize: '12px' }}>
+          답변까지 30초~1분 정도 걸려요. 사용자가 많으면 실패할 수 있어요.
+        </span>
         {message && <span role="status" style={{ display: 'block', color: 'var(--accent)', marginTop: '4px' }}>{message}</span>}
       </span>
       <button
