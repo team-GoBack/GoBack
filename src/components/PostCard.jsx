@@ -33,7 +33,7 @@ function getStatus(endsAt) {
   return 'open'
 }
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, recommendCount, hasVoted = false }) {
   const status = getStatus(post.vote_ends_at)
   // HOT 사연 = 아직 마감 전 + 투표가 HOT_MIN명 이상
   const isHot = status !== 'closed' && post.response_count >= HOT_MIN
@@ -88,8 +88,30 @@ export default function PostCard({ post }) {
 
       <h3>{post.title}</h3>
       <p>{post.content}</p>
-      <small>
-        투표 {post.response_count}명 · {getRemainingText(post.vote_ends_at)}
+      {/* 기존 투표 정보 왼쪽, 추천 수 오른쪽 (추천은 상세 페이지에서만) */}
+      <small style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', right: 22, gap: 6, lineHeight: 1.25 }}>
+        <span style={{ minWidth: 0 }}>
+          <span style={{ whiteSpace: 'nowrap' }}>
+            투표 {post.response_count}명
+            {hasVoted && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="내가 투표한 사연" style={{ marginLeft: 4, verticalAlign: '-2px' }}>
+                <title>내가 투표한 사연</title>
+                <circle cx="12" cy="12" r="9" />
+                <path d="m8 12 2.5 2.5L16 9" />
+              </svg>
+            )}
+          </span>
+          {' · '}{getRemainingText(post.vote_ends_at)}
+        </span>
+        {recommendCount !== undefined && (
+          <span title="추천 수" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0, color: 'var(--muted)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="추천">
+              <path d="M7 10v12" />
+              <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
+            </svg>
+            {recommendCount === null ? '…' : recommendCount}
+          </span>
+        )}
       </small>
     </Link>
   )

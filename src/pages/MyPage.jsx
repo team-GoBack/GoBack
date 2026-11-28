@@ -68,7 +68,11 @@ function writeHidden(userId, tab, ids) {
 // 두 페이지에서 같은 모양으로 사용하는 검색창 (공통 CSS 파일은 수정하지 않음)
 const searchBoxStyle = {
   display: 'flex', alignItems: 'center', gap: 10, minWidth: 0,
+<<<<<<< HEAD
   height: 44, padding: '0 14px', border: '1px solid color-mix(in srgb, var(--ink) 18%, transparent)', // 흰 배경 위에서 보이게 조금 진하게
+=======
+  height: 44, padding: '0 14px', border: '1px solid var(--border)',
+>>>>>>> e68061c47788cc5c2784e4e13b97fa8df9b726e1
   borderRadius: 999, background: 'var(--card)', color: 'var(--muted)',
 }
 const searchInputStyle = {
@@ -335,6 +339,14 @@ export default function MyPage() {
               </label>
             </div>
           </div>
+
+          <label style={{ ...searchBoxStyle, width: '100%', marginBottom: 14 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <circle cx="11" cy="11" r="7" />
+              <path d="m16 16 4 4" />
+            </svg>
+            <input type="search" aria-label="제목이나 내용으로 검색" placeholder="제목이나 내용으로 검색" value={search} onChange={(e) => setSearch(e.target.value)} style={searchInputStyle} />
+          </label>
 
           {!currentActivity || !currentHidden ? (
             <p role="status" style={messageStyle}>불러오는 중...</p>

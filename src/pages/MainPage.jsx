@@ -15,7 +15,11 @@ const SORTS = [
 // 두 페이지에서 같은 모양으로 사용하는 검색창 (공통 CSS 파일은 수정하지 않음)
 const searchBoxStyle = {
   display: 'flex', alignItems: 'center', gap: 10, minWidth: 0,
+<<<<<<< HEAD
   height: 44, padding: '0 14px', border: '1px solid color-mix(in srgb, var(--ink) 18%, transparent)', // 흰 배경 위에서 보이게 조금 진하게
+=======
+  height: 44, padding: '0 14px', border: '1px solid var(--border)',
+>>>>>>> e68061c47788cc5c2784e4e13b97fa8df9b726e1
   borderRadius: 999, background: 'var(--card)', color: 'var(--muted)',
 }
 const searchInputStyle = {
@@ -59,6 +63,84 @@ export default function MainPage() {
 
   const [search, setSearch] = useState('')
   const [ongoingOnly, setOngoingOnly] = useState(true) // 기본: 진행 중인 사연만 (체크박스 "마감된 사연 포함"을 켜면 전부)
+  const [recommendCounts, setRecommendCounts] = useState(null)
+  const [userId, setUserId] = useState(null)
+  const [myVotes, setMyVotes] = useState(null)
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 760px)').matches)
+
+  // 전체 사연의 추천 수를 한 번에 가져옴
+  useEffect(() => {
+    let ignore = false
+
+    getRecommendCounts()
+      .then((counts) => {
+        if (!ignore) setRecommendCounts(counts)
+      })
+      .catch((error) => {
+        console.error('추천 수 조회 실패:', error)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  // 로그인 상태 확인 및 로그인·로그아웃 감지
+  useEffect(() => {
+    let active = true
+    let authChanged = false
+    const unsubscribe = onAuthChange((user) => {
+      if (!active) return
+      authChanged = true
+      setUserId(user?.id ?? null)
+    })
+
+    getCurrentUser()
+      .then((user) => {
+        if (active && !authChanged) setUserId(user?.id ?? null)
+      })
+      .catch((error) => {
+        console.error('로그인 상태 확인 실패:', error)
+      })
+
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
+
+  // 로그인한 계정의 투표 기록만 한 번에 조회 (카드마다 호출하지 않음)
+  useEffect(() => {
+    let ignore = false
+    setMyVotes(null)
+    if (!userId) return
+
+    getMyVotedPosts()
+      .then((result) => {
+        if (!ignore) {
+          setMyVotes({ userId, ids: new Set((result ?? []).map((post) => post.id)) })
+        }
+      })
+      .catch((error) => {
+        console.error('내 투표 기록 조회 실패:', error)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [userId])
+
+  // 좁은 화면에서는 검색창을 캐치프레이즈 아래로 내림
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 760px)')
+    const update = () => setNarrow(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  const [search, setSearch] = useState('')
+  const [ongoingOnly, setOngoingOnly] = useState(false)
   const [recommendCounts, setRecommendCounts] = useState(null)
   const [userId, setUserId] = useState(null)
   const [myVotes, setMyVotes] = useState(null)
@@ -231,6 +313,7 @@ export default function MainPage() {
           )}
         </div>
 
+<<<<<<< HEAD
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           {/* 마감된 사연 포함 토글 (정렬 버튼 왼쪽). 작성 페이지 후일담 스위치와 같은 모양 */}
           <button
@@ -264,6 +347,17 @@ export default function MainPage() {
                 backgroundColor: ongoingOnly ? 'color-mix(in srgb, var(--muted) 30%, var(--card))' : 'var(--primary)',
                 transition: 'background-color 0.2s ease',
               }}
+=======
+        <div className="tags" style={{ marginBottom: 0 }}>
+          <button type="button" className={ongoingOnly ? 'active' : ''} aria-pressed={ongoingOnly} onClick={() => setOngoingOnly(!ongoingOnly)}>
+            진행 중만
+          </button>
+          {SORTS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setSort(s.key)}
+              className={s.key === sort ? 'active' : ''}
+>>>>>>> e68061c47788cc5c2784e4e13b97fa8df9b726e1
             >
               <span
                 style={{
@@ -296,7 +390,11 @@ export default function MainPage() {
       </div>
 
       {loading && !hasLoaded && <p>불러오는 중...</p>}
+<<<<<<< HEAD
       {!loading && displayPosts.length === 0 && <p>{keyword ? '검색 결과가 없어요' : ongoingOnly ? '진행 중인 사연이 없어요' : '사연이 없어요.'}</p>}
+=======
+      {!loading && displayPosts.length === 0 && <p>{keyword || ongoingOnly ? '검색 결과가 없어요' : '사연이 없어요.'}</p>}
+>>>>>>> e68061c47788cc5c2784e4e13b97fa8df9b726e1
       {displayPosts.map((post) => (
         <PostCard
           key={post.id}
