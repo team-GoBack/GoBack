@@ -16,7 +16,7 @@ export async function getAiAnswer(postId) {
   return data ?? null
 }
 
-// AI에게 답변 요청 (사연 작성자만, 투표 0명인 사연만, 한 번 만들면 저장됨)
+// AI에게 답변 요청 (사연 작성자만, 언제든, 사연당 한 번 만들면 저장됨)
 // 넣는 값: postId
 // 돌려주는 값: { ok: true, content } 또는 { ok: false, message }
 export async function requestAiAnswer(postId) {

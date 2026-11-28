@@ -476,7 +476,6 @@ export default function PostDetailPage() {
         <AiAnswerCard
           key={`ai-${id}-${Boolean(status?.canSeeResponses)}`}
           postId={id}
-          responseCount={post.response_count}
           isAuthor={Boolean(status?.isAuthor)}
         />
         {post.vote_ends_at && (

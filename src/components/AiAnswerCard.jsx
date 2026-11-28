@@ -1,7 +1,7 @@
 // [공통] AI 답변 카드 (사연 상세)
 // - 저장된 AI 답변이 있고 볼 수 있으면 보여 줌
 //   (작성자는 항상, 다른 사람은 투표·궁금해요·마감 후에만. DB 규칙(RLS)이 막아 줌)
-// - 답변이 없고 투표가 0명이면 작성자에게만 "AI에게 먼저 물어보기" 버튼
+// - 답변이 없으면 작성자에게만 "AI에게 물어보기" 버튼 (투표 수와 상관없이 언제든, 사연당 한 번)
 import { useEffect, useState } from 'react'
 import { getAiAnswer, requestAiAnswer } from '../api/ai.js'
 
@@ -13,7 +13,7 @@ const boxStyle = {
   background: 'color-mix(in srgb, var(--info) 6%, var(--card))',
 }
 
-export default function AiAnswerCard({ postId, responseCount, isAuthor }) {
+export default function AiAnswerCard({ postId, isAuthor }) {
   const [answer, setAnswer] = useState(null)
   const [loaded, setLoaded] = useState(false)
   const [asking, setAsking] = useState(false)
@@ -55,12 +55,12 @@ export default function AiAnswerCard({ postId, responseCount, isAuthor }) {
     )
   }
 
-  if (!isAuthor || responseCount > 0) return null
+  if (!isAuthor) return null
 
   return (
     <section style={{ ...boxStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
       <span style={{ color: 'var(--muted)', fontSize: '14px' }}>
-        아직 투표가 없어요. AI 의견을 먼저 들어볼까요?
+        사람들의 투표와 별개로, AI의 의견도 들어볼까요?
         {message && <span role="status" style={{ display: 'block', color: 'var(--accent)', marginTop: '4px' }}>{message}</span>}
       </span>
       <button
@@ -80,7 +80,7 @@ export default function AiAnswerCard({ postId, responseCount, isAuthor }) {
           opacity: asking ? 0.6 : 1,
         }}
       >
-        {asking ? 'AI가 생각 중…' : 'AI에게 먼저 물어보기'}
+        {asking ? 'AI가 생각 중…' : 'AI에게 물어보기'}
       </button>
     </section>
   )
