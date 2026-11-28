@@ -19,6 +19,7 @@ import PostActions from '../components/PostActions.jsx'
 import EpilogueSection from '../components/EpilogueSection.jsx'
 import PostFinish from '../components/PostFinish.jsx'
 import RecommendButton from '../components/RecommendButton.jsx'
+import AiAnswerCard from '../components/AiAnswerCard.jsx'
 
 const detailCardStyle = {
   padding: '24px',
@@ -471,6 +472,7 @@ export default function PostDetailPage() {
           {post.content}
         </p>
         <RecommendButton key={id} postId={id} />
+        <AiAnswerCard key={`ai-${id}`} postId={id} responseCount={post.response_count} />
         {post.vote_ends_at && (
           <div
             style={{
